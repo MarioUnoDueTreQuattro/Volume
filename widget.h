@@ -2,6 +2,7 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include "systemvolumecontroller.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -17,5 +18,14 @@ public:
 
 private:
     Ui::Widget *ui;
+    SystemVolumeController *m_systemVolumeController;
+    void updateMuteButtonIcon();
+private slots:
+    void onSystemVolumeChanged(float newVolume);
+    void onSystemMuteChanged(bool muted);
+    void onDefaultDeviceChanged();
+    void onDeviceChanged(const QString &deviceId, const QString &friendlyName);
+
+    void on_volumeSlider_valueChanged(int value);
 };
 #endif // WIDGET_H

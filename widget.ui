@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="labelVolume">
+    <widget class="QLabel" name="volumeLabel">
      <property name="text">
       <string>Volume: 100%</string>
      </property>
@@ -37,7 +37,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QSlider" name="sliderVolume">
+      <widget class="QSlider" name="volumeSlider">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -77,7 +77,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QPushButton" name="pushButtonMute">
+    <widget class="QPushButton" name="muteButton">
      <property name="text">
       <string>Mute</string>
      </property>
