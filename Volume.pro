@@ -10,13 +10,17 @@ CONFIG += c++11
 
 SOURCES += \
     main.cpp \
+    systemvolumecontroller.cpp \
     widget.cpp
 
 HEADERS += \
+    systemvolumecontroller.h \
     widget.h
 
 FORMS += \
     widget.ui
+
+LIBS += -lole32
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
