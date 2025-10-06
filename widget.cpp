@@ -9,6 +9,7 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget)
 {
     ui->setupUi(this);
+    setWindowTitle ("Volume");
     m_systemVolumeController = new SystemVolumeController(this);
     connect(m_systemVolumeController, SIGNAL(volumeChanged(float)),
         this, SLOT(onSystemVolumeChanged(float)));
@@ -18,11 +19,21 @@ Widget::Widget(QWidget *parent)
     // this, SLOT(onDefaultDeviceChanged()));
     connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged(QString, QString)),
         this, SLOT(onDeviceChanged(QString, QString)));
-        int iVol = int (m_systemVolumeController->volume () * 100.01f);
-        qDebug() << "Current master volume:" << iVol;
-        QSignalBlocker blocker(ui->volumeSlider);
-        ui->volumeSlider->setValue (iVol);
-        ui->volumeLabel->setText(QString::number(iVol) + "%");
+    int iVol = int (m_systemVolumeController->volume () * 100.01f);
+    qDebug() << "Current master volume:" << iVol;
+    QSignalBlocker blocker(ui->volumeSlider);
+    ui->volumeSlider->setValue (iVol);
+    ui->volumeLabel->setText(QString::number(iVol) + "%");
+    bool bMuted = m_systemVolumeController->isMuted ();
+    if (bMuted)
+    {
+        ui->muteButton->setChecked (true);
+    }
+    else
+    {
+        ui->muteButton->setChecked (false);
+    }
+    // adjustSize();
 }
 
 Widget::~Widget()
@@ -33,18 +44,18 @@ Widget::~Widget()
 void Widget::onSystemVolumeChanged(float newVolume)
 {
     qDebug() << "System volume changed: " << newVolume;
-        int iVol = int (m_systemVolumeController->volume () * 100.01f);
-        qDebug() << "Current master volume:" << iVol;
-        QSignalBlocker blocker(ui->volumeSlider);
-        ui->volumeSlider->setValue (iVol);
-        ui->volumeLabel->setText(QString::number(iVol) + "%");
+    int iVol = int (m_systemVolumeController->volume () * 100.01f);
+    qDebug() << "Current master volume:" << iVol;
+    QSignalBlocker blocker(ui->volumeSlider);
+    ui->volumeSlider->setValue (iVol);
+    ui->volumeLabel->setText(QString::number(iVol) + "%");
 }
 
 void Widget::onSystemMuteChanged(bool muted)
 {
     qDebug() << "System mute state changed: " << muted;
-        updateMuteButtonIcon ();
-        if (muted) ui->volumeLabel->setText("0%");
+    updateMuteButtonIcon ();
+    if (muted) ui->volumeLabel->setText("0%");
 }
 
 void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyName)
@@ -85,48 +96,48 @@ void Widget::onDefaultDeviceChanged()
 
 void Widget::updateMuteButtonIcon()
 {
-        bool bMuted = m_systemVolumeController->isMuted ();
-        if (bMuted)
-        {
-            ui->muteButton->setChecked (true);
-            ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
-        }
-        else
-        {
-            ui->muteButton->setChecked (false);
-            ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
-        }
-
+    bool bMuted = m_systemVolumeController->isMuted ();
+    if (bMuted)
+    {
+        ui->muteButton->setChecked (true);
+        ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
+    }
+    else
+    {
+        ui->muteButton->setChecked (false);
+        ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+    }
 }
 
 void Widget::on_volumeSlider_valueChanged(int value)
 {
-        float fVol = float (float(value) / 100.0f);
-        int iVol = int (fVol * 100.01f);
-        // qDebug() << "Current master volume f:" << fVol;
-        // qDebug() << "Current master volume i:" << iVol;
-        m_systemVolumeController->setVolume (fVol);
-        ui->volumeSlider->setValue (iVol);
-        ui->volumeLabel->setText(QString::number(iVol) + "%");
+    float fVol = float (float(value) / 100.0f);
+    int iVol = int (fVol * 100.01f);
+    // qDebug() << "Current master volume f:" << fVol;
+    // qDebug() << "Current master volume i:" << iVol;
+    m_systemVolumeController->setVolume (fVol);
+    ui->volumeSlider->setValue (iVol);
+    ui->volumeLabel->setText(QString::number(iVol) + "%");
 }
 
 void Widget::on_muteButton_clicked()
 {
-            bool bMuted = m_systemVolumeController->isMuted ();
-        if (bMuted)
-        {
-            // Unmute
-            m_systemVolumeController->mute (false);
-            int iVol = int (m_systemVolumeController->volume () * 100.01f);
-            qDebug() << "Current master volume:" << iVol;
-            ui->volumeSlider->setValue (iVol);
-            ui->volumeLabel->setText(QString::number(iVol) + "%");
-        }
-        else
-        {
-            // Mute
-            m_systemVolumeController->mute (true);
-            ui->volumeLabel->setText("0%");
-        }
-
+    bool bMuted = m_systemVolumeController->isMuted ();
+    if (bMuted)
+    {
+        // Unmute
+        m_systemVolumeController->mute (false);
+        int iVol = int (m_systemVolumeController->volume () * 100.01f);
+        qDebug() << "Current master volume:" << iVol;
+        ui->volumeSlider->setValue (iVol);
+        ui->volumeLabel->setText(QString::number(iVol) + "%");
+        ui->muteButton->setChecked (false);
+    }
+    else
+    {
+        // Mute
+        m_systemVolumeController->mute (true);
+        ui->volumeLabel->setText("0%");
+        ui->muteButton->setChecked (true);
+    }
 }

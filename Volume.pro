@@ -22,7 +22,12 @@ FORMS += \
 
 LIBS += -lole32
 
+win32:RC_ICONS = icons8-sound-96.ico
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    icons8-sound-96.ico
