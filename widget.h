@@ -27,5 +27,6 @@ private slots:
     void onDeviceChanged(const QString &deviceId, const QString &friendlyName);
 
     void on_volumeSlider_valueChanged(int value);
+    void on_muteButton_clicked();
 };
 #endif // WIDGET_H

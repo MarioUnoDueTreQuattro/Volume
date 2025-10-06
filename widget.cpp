@@ -23,7 +23,6 @@ Widget::Widget(QWidget *parent)
         QSignalBlocker blocker(ui->volumeSlider);
         ui->volumeSlider->setValue (iVol);
         ui->volumeLabel->setText(QString::number(iVol) + "%");
-        ui->muteButton->setChecked (m_systemVolumeController->isMuted ());
 }
 
 Widget::~Widget()
@@ -109,4 +108,25 @@ void Widget::on_volumeSlider_valueChanged(int value)
         m_systemVolumeController->setVolume (fVol);
         ui->volumeSlider->setValue (iVol);
         ui->volumeLabel->setText(QString::number(iVol) + "%");
+}
+
+void Widget::on_muteButton_clicked()
+{
+            bool bMuted = m_systemVolumeController->isMuted ();
+        if (bMuted)
+        {
+            // Unmute
+            m_systemVolumeController->mute (false);
+            int iVol = int (m_systemVolumeController->volume () * 100.01f);
+            qDebug() << "Current master volume:" << iVol;
+            ui->volumeSlider->setValue (iVol);
+            ui->volumeLabel->setText(QString::number(iVol) + "%");
+        }
+        else
+        {
+            // Mute
+            m_systemVolumeController->mute (true);
+            ui->volumeLabel->setText("0%");
+        }
+
 }
