@@ -54,16 +54,16 @@ Widget::Widget(QWidget *parent)
     // ui->muteButton->setChecked (false);
     // }
     updateMuteButtonIcon ();
-    closeButton = new QPushButton("X", this);
+    closeButton = new WindowButton("X", this);
     closeButton->setGeometry(width() - 10, topButtonsMargin, 10, 10);
     closeButton->setStyleSheet("QPushButton { background-color: red; color: white; border: none; }");
-    minimizeButton = new QPushButton("-", this);
+    minimizeButton = new WindowButton("-", this);
     minimizeButton->setGeometry(width() - 20, topButtonsMargin, 10, 10);
     minimizeButton->setStyleSheet("QPushButton { background-color: gray; color: white; border: none; }");
-    onTopButton = new QPushButton("↑", this);
+    onTopButton = new WindowButton("↑", this);
     onTopButton->setGeometry(width() - 30, topButtonsMargin, 10, 10);
     onTopButton->setStyleSheet("QPushButton { background-color: green; color: white; border: none; }");
-    transparentButton = new QPushButton("T", this);
+    transparentButton = new WindowButton("T", this);
     transparentButton->setGeometry(width() - 40, topButtonsMargin, 10, 10);
     transparentButton->setStyleSheet("QPushButton { background-color: blue; color: white; border: none; }");
     connect(transparentButton, SIGNAL(clicked()), this, SLOT(toggleTransparency()));

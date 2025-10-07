@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QPainter>
 #include <QPen>
+#include "windowbutton.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -34,10 +35,14 @@ void updateMuteButtonIcon();
     void loadSettings();
     QPoint mouseStartPos;
     QPoint windowStartPos;
-    QPushButton *closeButton;
-    QPushButton *minimizeButton;
-    QPushButton *onTopButton;
-    QPushButton *transparentButton;
+     WindowButton *closeButton;
+    WindowButton *minimizeButton;
+    WindowButton *onTopButton;
+    WindowButton *transparentButton;
+//   QPushButton *closeButton;
+//    QPushButton *minimizeButton;
+//    QPushButton *onTopButton;
+//    QPushButton *transparentButton;
     QRect windowStartRect;
     Qt::Edges resizeDirection;
     void updateCursorShape(const QPoint &pos);

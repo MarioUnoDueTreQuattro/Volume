@@ -11,11 +11,13 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     systemvolumecontroller.cpp \
-    widget.cpp
+    widget.cpp \
+    windowbutton.cpp
 
 HEADERS += \
     systemvolumecontroller.h \
-    widget.h
+    widget.h \
+    windowbutton.h
 
 FORMS += \
     widget.ui
