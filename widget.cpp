@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QToolTip>
 #include <QMessageBox>
+#include <QSettings>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -40,21 +41,38 @@ Widget::Widget(QWidget *parent)
     QSignalBlocker blocker(ui->volumeSlider);
     ui->volumeSlider->setValue (iVol);
     ui->volumeLabel->setText(QString::number(iVol) + "%");
-    bool bMuted = m_systemVolumeController->isMuted ();
-    if (bMuted)
-    {
-        ui->muteButton->setChecked (true);
-    }
-    else
-    {
-        ui->muteButton->setChecked (false);
-    }
+    // bool bMuted = m_systemVolumeController->isMuted ();
+    // if (bMuted)
+    // {
+    // ui->muteButton->setChecked (true);
+    // }
+    // else
+    // {
+    // ui->muteButton->setChecked (false);
+    // }
+    updateMuteButtonIcon ();
+    loadSettings ();
     // adjustSize();
 }
 
 Widget::~Widget()
 {
     delete ui;
+}
+
+void Widget::closeEvent(QCloseEvent *event)
+{
+    saveSettings ();
+    event->accept();
+    QWidget::closeEvent(event);
+}
+
+void Widget::moveEvent(QMoveEvent *event)
+{
+    // Chiamiamo la funzione di base per garantire che l'evento venga gestito normalmente
+    QWidget::moveEvent(event);
+    // 2. Chiama la funzione di salvataggio
+    saveSettings();
 }
 
 void Widget::onSystemVolumeChanged(float newVolume)
@@ -71,7 +89,7 @@ void Widget::onSystemMuteChanged(bool muted)
 {
     qDebug() << "System mute state changed: " << muted;
     updateMuteButtonIcon ();
-    if (muted) ui->volumeLabel->setText("0%");
+    // if (muted) ui->volumeLabel->setText("0%");
 }
 
 void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyName)
@@ -81,7 +99,6 @@ void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyNam
     QPoint globalPos = ui->volumeSlider->mapToGlobal(QPoint(ui->volumeSlider->width() / 2, ui->volumeSlider->height() / 2));
     QToolTip::showText(globalPos, sToolTipMessage, ui->volumeSlider);
     //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
-    bool wasPlaying = false;
     m_systemVolumeController->blockSignals(true);
     m_systemVolumeController->cleanup();
     m_systemVolumeController->initialize();
@@ -153,7 +170,44 @@ void Widget::on_muteButton_clicked()
     {
         // Mute
         m_systemVolumeController->mute (true);
-        ui->volumeLabel->setText("0%");
+        // ui->volumeLabel->setText("0%");
         ui->muteButton->setChecked (true);
+    }
+}
+
+void Widget::saveSettings()
+{
+    // QSettings richiede il nome dell'Organizzazione e dell'Applicazione
+    // per creare un percorso di salvataggio univoco.
+    QSettings settings;
+    // Salva la posizione corrente del widget (coordinate x, y)
+    settings.setValue("Position", pos());
+    // Potresti anche salvare la dimensione (larghezza, altezza)
+    settings.setValue("Size", size());
+    // In Qt, le impostazioni vengono salvate automaticamente
+}
+
+void Widget::loadSettings()
+{
+    QSettings settings;
+    // 1. Carica la posizione
+    QPoint savedPos = settings.value("Position", QPoint(100, 100)).toPoint();
+    // 2. Carica la dimensione
+    QSize savedSize = settings.value("Size", QSize(100, 200)).toSize();
+    // 3. Applica le impostazioni
+    this->setFixedWidth (ui->muteButton->width () + 24);
+    resize(savedSize);
+    // Controlla se la posizione salvata è visibile su qualsiasi schermo
+    // (Utile se l'utente ha staccato un monitor).
+    QScreen *screen = QGuiApplication::screenAt(savedPos);
+    if (screen)
+    {
+        move(savedPos);
+    }
+    else
+    {
+        // Se la posizione non è valida, centra la finestra
+        // La posizione di default (100, 100) verrà usata se la chiave non esiste
+        move(QPoint(100, 100));
     }
 }

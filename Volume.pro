@@ -31,3 +31,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 DISTFILES += \
     icons8-sound-96.ico
+
+RESOURCES += \
+    resources.qrc

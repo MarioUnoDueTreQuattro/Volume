@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>img/icons8-mute-48.png</file>
+        <file>img/icons8-sound-48.png</file>
+    </qresource>
+</RCC>
