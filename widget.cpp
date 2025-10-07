@@ -10,6 +10,22 @@ Widget::Widget(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowTitle ("Volume");
+    //     // Remove the minimize and maximize/restore buttons, leaving only the close button.
+    //    // The window will still have its title bar.
+    // setWindowFlags(
+    // Qt::Window |
+    // Qt::WindowMinimizeButtonHint | // This flag is *kept*
+    // Qt::WindowMaximizeButtonHint | // This flag is *kept*
+    // Qt::CustomizeWindowHint |      // Tells Qt to ignore the system default flags
+    // Qt::WindowCloseButtonHint      // Keep the close button
+    // );
+    Qt::WindowFlags flags = windowFlags();
+    // 2. Remove the specific hints for minimize and maximize
+    flags &= ~Qt::WindowMinimizeButtonHint;
+    flags &= ~Qt::WindowMaximizeButtonHint;
+    //flags &= ~ Qt::WindowCloseButtonHint;
+    // 3. Set the modified flags back
+    setWindowFlags(flags);
     m_systemVolumeController = new SystemVolumeController(this);
     connect(m_systemVolumeController, SIGNAL(volumeChanged(float)),
         this, SLOT(onSystemVolumeChanged(float)));
