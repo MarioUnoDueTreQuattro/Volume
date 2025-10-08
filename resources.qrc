@@ -2,5 +2,11 @@
     <qresource prefix="/img">
         <file>img/icons8-mute-48.png</file>
         <file>img/icons8-sound-48.png</file>
+        <file>img/Close_Red.png</file>
+        <file>img/Minimize.png</file>
+        <file>img/Pin.png</file>
+        <file>img/Transparent.png</file>
+        <file>img/UnPin.png</file>
+        <file>img/Close.png</file>
     </qresource>
 </RCC>

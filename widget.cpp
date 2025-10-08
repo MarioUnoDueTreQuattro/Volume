@@ -54,18 +54,27 @@ Widget::Widget(QWidget *parent)
     // ui->muteButton->setChecked (false);
     // }
     updateMuteButtonIcon ();
-    closeButton = new WindowButton("X", this);
-    closeButton->setGeometry(width() - 10, topButtonsMargin, 10, 10);
-    closeButton->setStyleSheet("QPushButton { background-color: red; color: white; border: none; }");
-    minimizeButton = new WindowButton("-", this);
-    minimizeButton->setGeometry(width() - 20, topButtonsMargin, 10, 10);
-    minimizeButton->setStyleSheet("QPushButton { background-color: gray; color: white; border: none; }");
-    onTopButton = new WindowButton("↑", this);
-    onTopButton->setGeometry(width() - 30, topButtonsMargin, 10, 10);
-    onTopButton->setStyleSheet("QPushButton { background-color: green; color: white; border: none; }");
-    transparentButton = new WindowButton("T", this);
-    transparentButton->setGeometry(width() - 40, topButtonsMargin, 10, 10);
-    transparentButton->setStyleSheet("QPushButton { background-color: blue; color: white; border: none; }");
+    m_iButtonSize = 12;
+    closeButton = new WindowButton("", this);
+    closeButton->setGeometry(width() - m_iButtonSize, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    closeButton->setStyleSheet("QPushButton { border: none; }");
+    closeButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
+    closeButton->setIcon (QIcon(":/img/img/Close.png"));
+    minimizeButton = new WindowButton("", this);
+    minimizeButton->setGeometry(width() - m_iButtonSize * 2, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    minimizeButton->setStyleSheet("QPushButton { border: none; }");
+    minimizeButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
+    minimizeButton->setIcon (QIcon(":/img/img/Minimize.png"));
+    onTopButton = new WindowButton("", this);
+    onTopButton->setGeometry(width() - m_iButtonSize * 3, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    onTopButton->setStyleSheet("QPushButton { border: none; }");
+    onTopButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
+    onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+    transparentButton = new WindowButton("", this);
+    transparentButton->setGeometry(width() - m_iButtonSize * 4, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    transparentButton->setStyleSheet("QPushButton { border: none; }");
+    transparentButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
+    transparentButton->setIcon (QIcon(":/img/img/Transparent.png"));
     connect(transparentButton, SIGNAL(clicked()), this, SLOT(toggleTransparency()));
     connect(onTopButton, SIGNAL(clicked()), this, SLOT(toggleOnTop()));
     connect(closeButton, SIGNAL(clicked()), this, SLOT(close()));
@@ -74,10 +83,10 @@ Widget::Widget(QWidget *parent)
     minimizeButton->setToolTip ("Minimize");
     onTopButton->setToolTip ("On top");
     transparentButton->setToolTip ("Transparent");
-    closeButton->setFixedSize (10, 10);
-    minimizeButton->setFixedSize (10, 10);
-    onTopButton->setFixedSize (10, 10);
-    transparentButton->setFixedSize (10, 10);
+    closeButton->setFixedSize (m_iButtonSize, m_iButtonSize);
+    minimizeButton->setFixedSize (m_iButtonSize, m_iButtonSize);
+    onTopButton->setFixedSize (m_iButtonSize, m_iButtonSize);
+    transparentButton->setFixedSize (m_iButtonSize, m_iButtonSize);
     loadSettings ();
     // adjustSize();
 }
@@ -98,10 +107,10 @@ void Widget::resizeEvent(QResizeEvent *event)
 {
     // 1. Chiami la versione base del gestore di eventi
     QWidget::resizeEvent (event);
-    closeButton->setGeometry(width() - 10, topButtonsMargin, 10, 10);
-    minimizeButton->setGeometry(width() - 20, topButtonsMargin, 10, 10);
-    onTopButton->setGeometry(width() - 30, topButtonsMargin, 10, 10);
-    transparentButton->setGeometry(width() - 40, topButtonsMargin, 10, 10);
+    closeButton->setGeometry(width() - m_iButtonSize, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    minimizeButton->setGeometry(width() - m_iButtonSize * 2, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    onTopButton->setGeometry(width() - m_iButtonSize * 3, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    transparentButton->setGeometry(width() - m_iButtonSize * 4, topButtonsMargin, m_iButtonSize, m_iButtonSize);
     // 2. Imposti il vincolo di larghezza
     // this->setFixedWidth (48);
     // 3. ✨ Forza il genitore ad aggiornare la sua dimensione preferita
@@ -326,13 +335,15 @@ void Widget::toggleOnTop()
     if (flags & Qt::WindowStaysOnTopHint)
     {
         flags &= ~Qt::WindowStaysOnTopHint;
-        onTopButton->setText("↑");
-    }
+        //onTopButton->setText("↑");
+      onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+  }
     else
     {
         flags |= Qt::WindowStaysOnTopHint;
-        onTopButton->setText("↓");
-    }
+        //onTopButton->setText("↓");
+      onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
+  }
     setWindowFlags(flags);
     show(); // Reapply flags
 }
@@ -342,12 +353,14 @@ void Widget::toggleTransparency()
     if (windowOpacity() < 1.0)
     {
         setWindowOpacity(1.0);
-        transparentButton->setText("T");
+       //transparentButton->setText("■");
+        m_bIsTransparent = false;
     }
     else
     {
         setWindowOpacity(0.5); // Adjust as needed
-        transparentButton->setText("t");
+       // transparentButton->setText("□");
+        m_bIsTransparent = true;
     }
 }
 
@@ -398,17 +411,44 @@ void Widget::loadSettings()
     if (onTop)
     {
         flags |= Qt::WindowStaysOnTopHint;
-        onTopButton->setText ("↑");
-    }
+        //onTopButton->setText ("↑");
+        m_bIsOnTop = true;
+       onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+ }
     else
     {
         flags &= ~Qt::WindowStaysOnTopHint;
-        onTopButton->setText ("↓");
+        //onTopButton->setText ("↓");
+        m_bIsOnTop = false;
+            onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
+
     }
     setWindowFlags(flags);
-    if (opacity < 1.0) transparentButton->setText("T");
-    else transparentButton->setText("t");
+    if (opacity < 1.0)
+    {
+       // transparentButton->setText("T");
+        m_bIsTransparent = false;
+    }
+    else
+    {
+       // transparentButton->setText("t");
+        m_bIsTransparent = true;
+    }
     setWindowOpacity(opacity);
+    updateButtons();
+}
+
+void Widget::updateButtons()
+{
+    if (m_bIsOnTop)
+//    onTopButton->setText("↓");
+    onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
+    else
+//    onTopButton->setText("↑");
+    onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+
+//    if (m_bIsTransparent) transparentButton->setText ("T");
+//    else transparentButton->setText("t");
 }
 
 void Widget::updateCursorShape(const QPoint &pos)

@@ -26,26 +26,30 @@ public:
 private:
     Ui::Widget *ui;
     SystemVolumeController *m_systemVolumeController;
+    bool m_bIsOnTop;
+    bool m_bIsTransparent;
     bool mousePressed;
     bool resizing;
     int resizeMargin;
-        int topButtonsMargin;
-void updateMuteButtonIcon();
+    int topButtonsMargin;
+    int m_iButtonSize;
+    void updateMuteButtonIcon();
     void saveSettings();
     void loadSettings();
     QPoint mouseStartPos;
     QPoint windowStartPos;
-     WindowButton *closeButton;
+    WindowButton *closeButton;
     WindowButton *minimizeButton;
     WindowButton *onTopButton;
     WindowButton *transparentButton;
-//   QPushButton *closeButton;
-//    QPushButton *minimizeButton;
-//    QPushButton *onTopButton;
-//    QPushButton *transparentButton;
+    // QPushButton *closeButton;
+    // QPushButton *minimizeButton;
+    // QPushButton *onTopButton;
+    // QPushButton *transparentButton;
     QRect windowStartRect;
     Qt::Edges resizeDirection;
     void updateCursorShape(const QPoint &pos);
+    void updateButtons();
 protected:
     void moveEvent(QMoveEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
@@ -62,6 +66,6 @@ private slots:
     void on_volumeSlider_valueChanged(int value);
     void on_muteButton_clicked();
     void toggleOnTop();
- void toggleTransparency();
- };
+    void toggleTransparency();
+};
 #endif // WIDGET_H
