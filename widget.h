@@ -58,6 +58,8 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
+    void enterEvent(QEvent *event) override;
+    void leaveEvent(QEvent *event) override;
 private slots:
     void onSystemVolumeChanged(float newVolume);
     void onSystemMuteChanged(bool muted);

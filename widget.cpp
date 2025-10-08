@@ -220,6 +220,17 @@ void Widget::paintEvent(QPaintEvent *event)
     painter.drawRect(rect().adjusted(0, 0, -1, -1));
 }
 
+void Widget::enterEvent(QEvent *event)
+{
+  if (m_bIsTransparent) this->setWindowOpacity (1.0);
+}
+
+void Widget::leaveEvent(QEvent *event)
+{
+   if (m_bIsTransparent) this->setWindowOpacity (0.5);
+
+}
+
 void Widget::moveEvent(QMoveEvent *event)
 {
     // qDebug() << __PRETTY_FUNCTION__;
@@ -378,7 +389,10 @@ void Widget::saveSettings()
     else settings.setValue("OnTop", false);
     // if (windowOpacity() == 1.0) settings.setValue("Transparent", false);
     // else settings.setValue("Transparent", true);
-    settings.setValue("Transparent", windowOpacity());
+    if (m_bIsTransparent)
+    settings.setValue("Transparent", qreal(0.5));
+    else
+    settings.setValue("Transparent", qreal(1.0));
     // In Qt, le impostazioni vengono salvate automaticamente
 }
 
@@ -427,12 +441,12 @@ void Widget::loadSettings()
     if (opacity < 1.0)
     {
        // transparentButton->setText("T");
-        m_bIsTransparent = false;
+        m_bIsTransparent = true;
     }
     else
     {
        // transparentButton->setText("t");
-        m_bIsTransparent = true;
+        m_bIsTransparent = false;
     }
     setWindowOpacity(opacity);
     updateButtons();
