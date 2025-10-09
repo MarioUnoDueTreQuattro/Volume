@@ -9,12 +9,16 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    hotkeyeditorwidget.cpp \
     main.cpp \
+    nativehotkeymanager.cpp \
     systemvolumecontroller.cpp \
     widget.cpp \
     windowbutton.cpp
 
 HEADERS += \
+    hotkeyeditorwidget.h \
+    nativehotkeymanager.h \
     systemvolumecontroller.h \
     widget.h \
     windowbutton.h

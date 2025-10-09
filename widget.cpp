@@ -5,6 +5,9 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QMenu>
+#include <QTimer>
+#include "hotkeyeditorwidget.h"
+#include "nativehotkeymanager.h"
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -29,7 +32,9 @@ Widget::Widget(QWidget *parent)
     //flags &= ~ Qt::WindowCloseButtonHint;
     // 3. Set the modified flags back
     setWindowFlags(flags);
-    setWindowFlags(Qt::FramelessWindowHint);
+    setWindowFlags(Qt::FramelessWindowHint/* | Qt::Window*/);
+    // winId(); // forza la creazione del HWND
+    //setAttribute(Qt::WA_NativeWindow); // forza la creazione nativa
     //setWindowFlags(Qt::Tool | Qt::CustomizeWindowHint);
     m_systemVolumeController = new SystemVolumeController(this);
     connect(m_systemVolumeController, SIGNAL(volumeChanged(float)),
@@ -92,6 +97,29 @@ Widget::Widget(QWidget *parent)
     connect(transparentButton, &QPushButton::customContextMenuRequested, this, &Widget::showOpacityContextMenu);
     loadSettings ();
     // adjustSize();
+    //QTimer::singleShot(1000, this, SLOT(initializeHotkeyManager()));
+    NativeHotkeyManager *manager = NativeHotkeyManager::instance(this);
+    manager->setOrganizationName (QCoreApplication::organizationName ());
+    manager->setApplicationName (QCoreApplication::applicationName());
+//    manager->saveHotkey("1", "Meta+Alt+M");
+//    manager->saveHotkey("2", "Ctrl+Alt+T");
+//    manager->saveHotkey("3", "Meta+Alt+NUMPADPLUS");
+//    manager->saveHotkey("4", "Meta+Alt+NumPad-");
+    manager->bindAction(1, std::bind(&Widget::on_muteButton_clicked, this));
+    manager->bindAction(2, std::bind(&Widget::toggleOnTop, this));
+    manager->bindAction(3, std::bind(&Widget::handleVolumeUp, this));
+    manager->bindAction(4, std::bind(&Widget::handleVolumeDown, this));
+    //manager->bindAction(5, std::bind(&Widget::handleVolumeUp, this));
+    manager->loadHotkeys();
+    qDebug() << "Hotkey actions registered:" << manager->registeredHotkeyNames();
+//    QDialog *dialog = new QDialog(this);
+//    dialog->setWindowTitle("Hotkey Editor");
+//    QVBoxLayout *layout = new QVBoxLayout(dialog);
+//    HotkeyEditorWidget *editor = new HotkeyEditorWidget(dialog);
+//    layout->addWidget(editor);
+//    connect(editor, SIGNAL(hotkeyAssigned(QString, QString)),
+//        this, SLOT(onHotkeyAssigned(QString, QString)));
+//    dialog->exec(); // blocca finché non chiudi
 }
 
 Widget::~Widget()
@@ -101,6 +129,7 @@ Widget::~Widget()
 
 void Widget::closeEvent(QCloseEvent *event)
 {
+    NativeHotkeyManager::instance(this)-> unregisterAllHotkeys();
     saveSettings ();
     event->accept();
     QWidget::closeEvent(event);
@@ -372,6 +401,28 @@ void Widget::on_volumeSlider_valueChanged(int value)
     ui->volumeLabel->setText(QString::number(iVol) + "%");
 }
 
+void Widget::handleVolumeUp()
+{
+    int iDiff = 10;
+    int iCurVol = ui->volumeSlider->value ();
+    iCurVol = qBound(0, iCurVol + iDiff, 100);
+    float fVol = float (float(iCurVol) / 100.0f);
+    m_systemVolumeController->setVolume (fVol);
+    ui->volumeSlider->setValue (iCurVol);
+    ui->volumeLabel->setText(QString::number(iCurVol) + "%");
+}
+
+void Widget::handleVolumeDown()
+{
+    int iDiff = -10;
+    int iCurVol = ui->volumeSlider->value ();
+    iCurVol = qBound(0, iCurVol + iDiff, 100);
+    float fVol = float (float(iCurVol) / 100.0f);
+    m_systemVolumeController->setVolume (fVol);
+    ui->volumeSlider->setValue (iCurVol);
+    ui->volumeLabel->setText(QString::number(iCurVol) + "%");
+}
+
 void Widget::on_muteButton_clicked()
 {
     bool bMuted = m_systemVolumeController->isMuted ();
@@ -396,6 +447,7 @@ void Widget::on_muteButton_clicked()
 
 void Widget::toggleOnTop()
 {
+    //PostMessage(reinterpret_cast<HWND>(winId()), WM_HOTKEY, 1, 0); // simula hotkey ID 1
     Qt::WindowFlags flags = windowFlags();
     if (flags & Qt::WindowStaysOnTopHint)
     {
@@ -483,7 +535,7 @@ void Widget::loadSettings()
     }
     bool onTop = settings.value("OnTop", false).toBool();
     qreal opacity = settings.value("Transparent", 1.0).toReal();
-    m_dLastOpacity = settings.value("LastTransparecyLevel", 1.0).toReal();
+    m_dLastOpacity = settings.value("LastTransparecyLevel", 0.5).toReal();
     Qt::WindowFlags flags = windowFlags();
     if (onTop)
     {
@@ -552,4 +604,10 @@ void Widget::updateCursorShape(const QPoint &pos)
         setCursor(Qt::SizeVerCursor);
     else
         setCursor(Qt::ArrowCursor);
+}
+
+void Widget::onHotkeyAssigned(const QString &name, const QString &sequence)
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    NativeHotkeyManager::instance(this)->saveHotkey(name, sequence);
 }

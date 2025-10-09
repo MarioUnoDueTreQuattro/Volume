@@ -23,6 +23,7 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
+public slots:
 private:
     Ui::Widget *ui;
     SystemVolumeController *m_systemVolumeController;
@@ -52,6 +53,8 @@ private:
     Qt::Edges resizeDirection;
     void updateCursorShape(const QPoint &pos);
     void updateButtons();
+    void handleVolumeDown();
+    void handleVolumeUp();
 protected:
     void moveEvent(QMoveEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
@@ -63,6 +66,7 @@ protected:
     void enterEvent(QEvent *event) override;
     void leaveEvent(QEvent *event) override;
 private slots:
+    void onHotkeyAssigned(const QString &name, const QString &sequence);
     void onOpacityActionTriggered();
     void showOpacityContextMenu(const QPoint &pos);
     void onSystemVolumeChanged(float newVolume);
