@@ -10,6 +10,7 @@
 #include <QPainter>
 #include <QPen>
 #include "windowbutton.h"
+#include "nativehotkeymanager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -55,6 +56,8 @@ private:
     void updateButtons();
     void handleVolumeDown();
     void handleVolumeUp();
+    void testHotKey(NativeHotkeyManager *manager);
+    
 protected:
     void moveEvent(QMoveEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
