@@ -220,86 +220,47 @@ QStringList NativeHotkeyManager::registeredHotkeyNames() const
 
 QString NativeHotkeyManager::normalizeKeySequence(const QString &sequence)
 {
-    QString normalized = sequence.trimmed().toUpper();
+    QStringList modifiers;
+    QString keyPart;
 
-    // --- Remove spaces around plus signs ---
-    normalized.replace(" +", "+");
-    normalized.replace("+ ", "+");
-    normalized.replace(" ", ""); // remove any remaining spaces
-
-    // --- Replace common synonyms / variants ---
-    normalized.replace("CONTROL", "CTRL");
-    normalized.replace("ESCAPE", "ESC");
-    normalized.replace("RETURN", "ENTER");
-    normalized.replace("DEL", "DELETE");
-    normalized.replace("PGUP", "PAGEUP");
-    normalized.replace("PGDN", "PAGEDOWN");
-    normalized.replace("WINKEY", "WIN");
-
-    // --- Normalize numeric keypad naming ---
-    normalized.replace("NUMPAD ", "NUMPAD"); // handle "NumPad 5" etc.
-    normalized.replace("NUMPAD", "NUMPAD"); // ensure consistent case
-    normalized.replace("NUMPAD+", "NUMPAD+");
-    normalized.replace("NUMPAD-", "NUMPAD-");
-    normalized.replace("NUMPAD*", "NUMPAD*");
-    normalized.replace("NUMPAD/", "NUMPAD/");
-    normalized.replace("NUMPAD.", "NUMPAD.");
-    normalized.replace("NUMPAD0", "NUMPAD0");
-    normalized.replace("NUMPAD1", "NUMPAD1");
-    normalized.replace("NUMPAD2", "NUMPAD2");
-    normalized.replace("NUMPAD3", "NUMPAD3");
-    normalized.replace("NUMPAD4", "NUMPAD4");
-    normalized.replace("NUMPAD5", "NUMPAD5");
-    normalized.replace("NUMPAD6", "NUMPAD6");
-    normalized.replace("NUMPAD7", "NUMPAD7");
-    normalized.replace("NUMPAD8", "NUMPAD8");
-    normalized.replace("NUMPAD9", "NUMPAD9");
-
-    // --- Optional: make sure there are no double "++" errors ---
-    while (normalized.contains("++"))
-        normalized.replace("++", "+");
-
-    return normalized;
-}
-
-// ---------------------------------------------------------
-
-ParsedKey NativeHotkeyManager::parseKeySequence(const QString &sequence)
-{
-    ParsedKey result;
-    result.mainKey = 0;
-    result.modifiers = 0;
-
-    // --- 1. Normalize input ---
-    QString normalized = normalizeKeySequence(sequence);
-
-    // --- 2. Split by '+' ---
-    QStringList parts = normalized.split('+', Qt::SkipEmptyParts);
-
-    // --- 3. Parse each part ---
-    for (const QString &part : parts)
-    {
-        QString key = part.trimmed();
-
-        if (key == "CTRL")
-            result.modifiers |= MOD_CONTROL;
-        else if (key == "SHIFT")
-            result.modifiers |= MOD_SHIFT;
-        else if (key == "ALT")
-            result.modifiers |= MOD_ALT;
-        else if (key == "WIN" || key == "LWIN" || key == "RWIN")
-            result.modifiers |= MOD_WIN;
-        else
-        {
-            // Lookup in keyMap for the main key
-            if (keyMap.contains(key))
-                result.mainKey = keyMap.value(key);
-            else
-                qWarning() << "Unknown key in sequence:" << key;
+    // Split by '+' but preserve actual '+' key as special case
+    int i = 0;
+    while (i < sequence.length()) {
+        if (sequence[i] == '+') {
+            if (i + 1 < sequence.length() && sequence[i + 1] == '+') {
+                keyPart = "+NUM"; // numeric keypad '+'
+                i += 2;
+            } else {
+                ++i; // separator, skip
+            }
+        } else if (sequence[i] == '-') {
+            keyPart = "-NUM"; // numeric keypad '-' if combined with modifiers
+            ++i;
+        } else {
+            QString current;
+            while (i < sequence.length() && sequence[i] != '+' && sequence[i] != '-')
+                current += sequence[i++];
+            modifiers << current.trimmed().toUpper();
         }
     }
 
-    return result;
+    // Separate modifiers from main key
+    QString mainKey;
+    QStringList finalModifiers;
+    for (const QString &part : modifiers) {
+        if (part == "CTRL" || part == "SHIFT" || part == "ALT" || part == "META" || part == "WIN")
+            finalModifiers << part;
+        else
+            mainKey = part;
+    }
+
+    if (!keyPart.isEmpty())
+        mainKey = keyPart; // override if we detected numeric keypad '+/-'
+
+    if (!mainKey.isEmpty())
+        finalModifiers << mainKey;
+
+    return finalModifiers.join("+");
 }
 
 bool NativeHotkeyManager::parseKeySequence(const QString &sequence, UINT &modifiers, UINT &vk)
@@ -311,46 +272,31 @@ bool NativeHotkeyManager::parseKeySequence(const QString &sequence, UINT &modifi
     QStringList parts = normalized.split('+', Qt::SkipEmptyParts);
     QString keyPart;
 
-    for (const QString &part : parts)
-    {
+    for ( const QString &part : parts) {
         if (part == "CTRL") modifiers |= MOD_CONTROL;
-        else if (part == "ALT") modifiers |= MOD_ALT;
         else if (part == "SHIFT") modifiers |= MOD_SHIFT;
-        else if (part == "WIN" || part == "META") modifiers |= MOD_WIN;
-        else keyPart = part;
+        else if (part == "ALT") modifiers |= MOD_ALT;
+        else if (part == "META") modifiers |= MOD_WIN;
+        else
+{
+        keyPart = part;
+if (part=="NUM") keyPart="+NUM";
+qDebug()<<"keyPart->" <<keyPart;
+}
     }
 
-    // --- Normalize aliases for PLUS and MINUS ---
-    if (keyPart == "+" || keyPart == "PLUS")
-        keyPart = "PLUS";
-    else if (keyPart == "-" || keyPart == "MINUS")
-        keyPart = "MINUS";
-    else if (keyPart == "NUMPAD+" || keyPart == "NUMPADPLUS" || keyPart == "ADD" || keyPart == "+NUM")
-        keyPart = "+NUM";
-    else if (keyPart == "NUMPAD-" || keyPart == "NUMPADMINUS" || keyPart == "SUBTRACT" || keyPart == "-NUM")
-        keyPart = "-NUM";
+    // Detect numeric keypad keys
+    if (keyPart == "+NUM") vk = VK_ADD;
+    else if (keyPart == "-NUM") vk = VK_SUBTRACT;
+    else if (keyMap.contains(keyPart)) vk = keyMap[keyPart];
+    else if (keyPart.length() == 1) vk = VkKeyScan(keyPart.at(0).toLatin1()) & 0xFF;
 
-    // --- Lookup key ---
-    if (keyMap.contains(keyPart))
-    {
-        vk = keyMap[keyPart];
-    }
-    else if (keyPart.length() == 1)
-    {
-        vk = VkKeyScan(keyPart.at(0).toLatin1()) & 0xFF;
-    }
-
-    if (vk == 0)
-    {
+    if (vk == 0) {
         qDebug() << "Unrecognized key:" << keyPart << "from sequence:" << sequence;
         return false;
     }
 
-    qDebug() << "Normalized:" << normalized
-             << "→ keyPart:" << keyPart
-             << "→ vk:" << vk
-             << "→ modifiers:" << modifiers;
-
+    qDebug() << "Parsed sequence:" << sequence << "→ modifiers:" << modifiers << "vk:" << vk;
     return true;
 }
 

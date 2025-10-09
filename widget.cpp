@@ -7,6 +7,7 @@
 #include <QMenu>
 #include <QTimer>
 #include "hotkeyeditorwidget.h"
+#include "hotkeyeditor.h"
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -104,6 +105,8 @@ Widget::Widget(QWidget *parent)
     // manager->saveHotkey("2", "Ctrl+Alt+T");
     // manager->saveHotkey("3", "Meta+Alt+NUMPADPLUS");
     // manager->saveHotkey("4", "Meta+Alt+NumPad-");
+//    HotkeyEditor *hot=new HotkeyEditor(this);
+//    hot->exec ();
     manager->bindAction(1, std::bind(&Widget::on_muteButton_clicked, this));
     manager->bindAction(2, std::bind(&Widget::toggleOnTop, this));
     manager->bindAction(3, std::bind(&Widget::handleVolumeUp, this));
@@ -119,7 +122,9 @@ Widget::Widget(QWidget *parent)
     // connect(editor, SIGNAL(hotkeyAssigned(QString, QString)),
     // this, SLOT(onHotkeyAssigned(QString, QString)));
     // dialog->exec(); // blocca finché non chiudi
-    testHotKey(manager);
+
+   // testHotKey(manager);
+
 }
 
 Widget::~Widget()
@@ -612,42 +617,3 @@ void Widget::onHotkeyAssigned(const QString &name, const QString &sequence)
     NativeHotkeyManager::instance(this)->saveHotkey(name, sequence);
 }
 
-void Widget::testHotKey(NativeHotkeyManager *manager)
-{
-    // Allocate the window on the heap
-    QWidget *window = new QWidget;
-    window->setWindowTitle("Hotkey Demo");
-    window->resize(300, 100);
-
-    QLabel *label = new QLabel("Press the hotkey...", window);
-    label->setObjectName("hotkeyLabel");
-    label->setAlignment(Qt::AlignCenter);
-    label->setGeometry(10, 10, 280, 80);
-
-    window->show();
-
-    NativeHotkeyManager *hotkeyMgr = NativeHotkeyManager::instance(window);
-    QString shortcut = "Ctrl + Alt + NumPad5";
-    ParsedKey parsed = hotkeyMgr->parseKeySequence(shortcut);
-    int hotkeyId = 1; // Unique ID for this hotkey
-
-    // Cast Qt WId to HWND
-    HWND hwnd = reinterpret_cast<HWND>(window->winId());
-
-    if (RegisterHotKey(hwnd, hotkeyId, parsed.modifiers, parsed.mainKey))
-        qDebug() << "Hotkey registered:" << hotkeyMgr->keySequenceToString(parsed);
-    else
-        qDebug() << "Failed to register hotkey, error:" << GetLastError();
-
-    // Bind action
-    hotkeyMgr->bindAction(hotkeyId, [label, shortcut]() {
-        label->setText("Hotkey pressed: " + shortcut);
-        qDebug() << "Hotkey pressed: " << shortcut;
-    });
-
-    // Cleanup on exit
-    QObject::connect(qApp, &QApplication::aboutToQuit, [hotkeyMgr]() {
-        hotkeyMgr->unregisterAllHotkeys();
-        qDebug() << "All hotkeys unregistered";
-    });
-}

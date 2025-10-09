@@ -56,7 +56,6 @@ private:
     void updateButtons();
     void handleVolumeDown();
     void handleVolumeUp();
-    void testHotKey(NativeHotkeyManager *manager);
     
 protected:
     void moveEvent(QMoveEvent *event) override;
