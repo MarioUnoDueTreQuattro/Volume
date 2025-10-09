@@ -4,6 +4,7 @@
 #include <QToolTip>
 #include <QMessageBox>
 #include <QSettings>
+#include <QMenu>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -87,6 +88,8 @@ Widget::Widget(QWidget *parent)
     minimizeButton->setFixedSize (m_iButtonSize, m_iButtonSize);
     onTopButton->setFixedSize (m_iButtonSize, m_iButtonSize);
     transparentButton->setFixedSize (m_iButtonSize, m_iButtonSize);
+    transparentButton->setContextMenuPolicy (Qt::CustomContextMenu);
+    connect(transparentButton, &QPushButton::customContextMenuRequested, this, &Widget::showOpacityContextMenu);
     loadSettings ();
     // adjustSize();
 }
@@ -222,13 +225,64 @@ void Widget::paintEvent(QPaintEvent *event)
 
 void Widget::enterEvent(QEvent *event)
 {
-  if (m_bIsTransparent) this->setWindowOpacity (1.0);
+    if (m_bIsTransparent) this->setWindowOpacity (1.0);
 }
 
 void Widget::leaveEvent(QEvent *event)
 {
-   if (m_bIsTransparent) this->setWindowOpacity (0.5);
+    if (m_bIsTransparent) this->setWindowOpacity (m_dOpacity);
+}
 
+void Widget::showOpacityContextMenu(const QPoint &pos)
+{
+    QMenu contextMenu(this);
+    QAction *removeTransparencyAction = contextMenu.addAction(tr("Remove transparency"));
+    //removeTransparencyAction->setCheckable(true);
+    //playerVolumeAction->setCheckable(true);
+    if (m_bIsTransparent == false) removeTransparencyAction->setEnabled (false);
+    contextMenu.addSeparator();
+    // --- Create a submenu for opacity levels ---
+    //QMenu *opacityMenu = contextMenu.addMenu(tr("Set Opacity"));
+    // Create 10 actions: 10%, 20%, ..., 100%
+    for (int i = 1; i < 10; ++i)
+    {
+        int level = 100 - i * 10;
+        QAction *action = new QAction(/*"Set transparency to " +*/ QString::number(level) + "%", &contextMenu);
+        action->setData(level);
+        action->setCheckable(true);
+        // Mark the current opacity as checked
+        if (qRound(100 - m_dOpacity * 100) == level)
+            action->setChecked(true);
+        connect(action, SIGNAL(triggered()), this, SLOT(onOpacityActionTriggered()));
+        contextMenu.addAction(action);
+    }
+    QAction *selectedAction = contextMenu.exec(transparentButton->mapToGlobal(pos));
+    if (selectedAction == removeTransparencyAction)
+    {
+        this->setWindowOpacity (1.0);
+        m_bIsTransparent = false;
+        m_dOpacity = 1.0;
+        QString sTransparentButtonTip = "Set transparency to ";
+        sTransparentButtonTip.append (QString::number (qRound(100 - m_dLastOpacity * 100)) + "%");
+        transparentButton->setToolTip (sTransparentButtonTip);
+    }
+}
+
+void Widget::onOpacityActionTriggered()
+{
+    QAction *action = qobject_cast<QAction *>(sender());
+    if (!action)
+        return;
+    int level = 100 - action->data().toInt();
+    qreal opacity = level / 100.0;
+    this->setWindowOpacity(opacity);
+    // Track transparency state
+    m_bIsTransparent = (opacity < 1.0);
+    m_dOpacity = opacity;
+    m_dLastOpacity = opacity;
+    transparentButton->setToolTip ("Remove transparency");
+    qDebug() << "Window transparency set to" << 100 - level << "%";
+    //saveSettings ();
 }
 
 void Widget::moveEvent(QMoveEvent *event)
@@ -347,31 +401,38 @@ void Widget::toggleOnTop()
     {
         flags &= ~Qt::WindowStaysOnTopHint;
         //onTopButton->setText("↑");
-      onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
-  }
+        onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+    }
     else
     {
         flags |= Qt::WindowStaysOnTopHint;
         //onTopButton->setText("↓");
-      onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
-  }
+        onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
+    }
     setWindowFlags(flags);
     show(); // Reapply flags
 }
 
 void Widget::toggleTransparency()
 {
-    if (windowOpacity() < 1.0)
+    if (m_bIsTransparent)
     {
         setWindowOpacity(1.0);
-       //transparentButton->setText("■");
+        //transparentButton->setText("■");
         m_bIsTransparent = false;
+        m_dOpacity = 1.0;
+        QString sTransparentButtonTip = "Set transparency to ";
+        sTransparentButtonTip.append (QString::number (qRound(100 - m_dLastOpacity * 100)) + "%");
+        transparentButton->setToolTip (sTransparentButtonTip);
     }
     else
     {
-        setWindowOpacity(0.5); // Adjust as needed
-       // transparentButton->setText("□");
+        setWindowOpacity(m_dLastOpacity); // Adjust as needed
+        // transparentButton->setText("□");
         m_bIsTransparent = true;
+        m_dOpacity = m_dLastOpacity;
+        transparentButton->setToolTip ("Remove transparency");
+        qDebug() << "Window transparency set to" << qRound((1.0 - m_dLastOpacity) * 100.0) << "%";
     }
 }
 
@@ -390,9 +451,10 @@ void Widget::saveSettings()
     // if (windowOpacity() == 1.0) settings.setValue("Transparent", false);
     // else settings.setValue("Transparent", true);
     if (m_bIsTransparent)
-    settings.setValue("Transparent", qreal(0.5));
+        settings.setValue("Transparent", qreal(m_dOpacity));
     else
-    settings.setValue("Transparent", qreal(1.0));
+        settings.setValue("Transparent", qreal(1.0));
+    settings.setValue("LastTransparecyLevel", qreal(m_dLastOpacity));
     // In Qt, le impostazioni vengono salvate automaticamente
 }
 
@@ -421,48 +483,52 @@ void Widget::loadSettings()
     }
     bool onTop = settings.value("OnTop", false).toBool();
     qreal opacity = settings.value("Transparent", 1.0).toReal();
+    m_dLastOpacity = settings.value("LastTransparecyLevel", 1.0).toReal();
     Qt::WindowFlags flags = windowFlags();
     if (onTop)
     {
         flags |= Qt::WindowStaysOnTopHint;
         //onTopButton->setText ("↑");
         m_bIsOnTop = true;
-       onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
- }
+        onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+    }
     else
     {
         flags &= ~Qt::WindowStaysOnTopHint;
         //onTopButton->setText ("↓");
         m_bIsOnTop = false;
-            onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
-
+        onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
     }
     setWindowFlags(flags);
     if (opacity < 1.0)
     {
-       // transparentButton->setText("T");
+        // transparentButton->setText("T");
         m_bIsTransparent = true;
+        transparentButton->setToolTip ("Remove transparency");
     }
     else
     {
-       // transparentButton->setText("t");
+        // transparentButton->setText("t");
         m_bIsTransparent = false;
+        QString sTransparentButtonTip = "Set transparency to ";
+        sTransparentButtonTip.append (QString::number (qRound(100 - m_dLastOpacity * 100)) + "%");
+        transparentButton->setToolTip (sTransparentButtonTip);
     }
     setWindowOpacity(opacity);
+    m_dOpacity = opacity;
     updateButtons();
 }
 
 void Widget::updateButtons()
 {
     if (m_bIsOnTop)
-//    onTopButton->setText("↓");
-    onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
+        // onTopButton->setText("↓");
+        onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
     else
-//    onTopButton->setText("↑");
-    onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
-
-//    if (m_bIsTransparent) transparentButton->setText ("T");
-//    else transparentButton->setText("t");
+        // onTopButton->setText("↑");
+        onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+    // if (m_bIsTransparent) transparentButton->setText ("T");
+    // else transparentButton->setText("t");
 }
 
 void Widget::updateCursorShape(const QPoint &pos)

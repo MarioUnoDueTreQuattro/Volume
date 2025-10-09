@@ -28,6 +28,8 @@ private:
     SystemVolumeController *m_systemVolumeController;
     bool m_bIsOnTop;
     bool m_bIsTransparent;
+    qreal m_dOpacity;
+    qreal m_dLastOpacity;
     bool mousePressed;
     bool resizing;
     int resizeMargin;
@@ -61,6 +63,8 @@ protected:
     void enterEvent(QEvent *event) override;
     void leaveEvent(QEvent *event) override;
 private slots:
+    void onOpacityActionTriggered();
+    void showOpacityContextMenu(const QPoint &pos);
     void onSystemVolumeChanged(float newVolume);
     void onSystemMuteChanged(bool muted);
     void onDefaultDeviceChanged();
