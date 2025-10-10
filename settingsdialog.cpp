@@ -123,3 +123,33 @@ void SettingsDialog::loadHotKeys()
         ui->keySequenceEditTransparent->setKeySequence (QKeySequence(sequence, QKeySequence::NativeText));
     }
 }
+
+void SettingsDialog::on_pushButtonResetVolUp_clicked()
+{
+    ui->keySequenceEditVolUp->clear ();
+    ui->keySequenceEditVolUp->setFocus ();
+}
+
+void SettingsDialog::on_pushButtonResetVolDown_clicked()
+{
+    ui->keySequenceEditVolDown->clear ();
+    ui->keySequenceEditVolDown->setFocus ();
+}
+
+void SettingsDialog::on_pushButtonResetMute_clicked()
+{
+    ui->keySequenceEditMute->clear ();
+    ui->keySequenceEditMute->setFocus ();
+}
+
+void SettingsDialog::on_pushButtonResetTop_clicked()
+{
+    ui->keySequenceEditOnTop->clear ();
+    ui->keySequenceEditOnTop->setFocus ();
+}
+
+void SettingsDialog::on_pushButtonResetTransparent_clicked()
+{
+    ui->keySequenceEditTransparent->clear ();
+    ui->keySequenceEditTransparent->setFocus ();
+}

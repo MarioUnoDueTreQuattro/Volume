@@ -19,7 +19,11 @@ public:
 
 private slots:
     void on_buttonBox_accepted();
-
+    void on_pushButtonResetVolUp_clicked();
+    void on_pushButtonResetVolDown_clicked();
+    void on_pushButtonResetMute_clicked();
+    void on_pushButtonResetTop_clicked();
+    void on_pushButtonResetTransparent_clicked();
 private:
     Ui::SettingsDialog *ui;
     NativeHotkeyManager *hotkeyMgr;
