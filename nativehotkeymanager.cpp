@@ -3,6 +3,7 @@
 #include <QSettings>
 #include <QDebug>
 #include <QTimer>
+#include <QCoreApplication>
 
 static const QMap<QString, UINT> keyMap =
 {
@@ -78,6 +79,8 @@ NativeHotkeyManager::NativeHotkeyManager(QWidget *targetWindow)
     hwnd = reinterpret_cast<HWND>(targetWindow->winId());
     //qDebug() << "HWND:" << hwnd;
     QAbstractEventDispatcher::instance()->installNativeEventFilter(this);
+    m_sOrganizationName=qApp->organizationName ();
+    m_sApplicationName=qApp->applicationName ();
     //qDebug() << "Native event filter installed";
 }
 
@@ -176,7 +179,7 @@ void NativeHotkeyManager::saveHotkeyConfig(const QString &name, const QString &k
 
 QString NativeHotkeyManager::loadHotkeyConfig(const QString &name)
 {
-    qDebug() << __PRETTY_FUNCTION__;
+    qDebug() << __PRETTY_FUNCTION__ << name;
     QSettings settings(m_sOrganizationName, m_sApplicationName);
     return settings.value("Hotkeys/" + name).toString();
 }
@@ -222,44 +225,49 @@ QString NativeHotkeyManager::normalizeKeySequence(const QString &sequence)
 {
     QStringList modifiers;
     QString keyPart;
-
     // Split by '+' but preserve actual '+' key as special case
     int i = 0;
-    while (i < sequence.length()) {
-        if (sequence[i] == '+') {
-            if (i + 1 < sequence.length() && sequence[i + 1] == '+') {
+    while (i < sequence.length())
+    {
+        if (sequence[i] == '+')
+        {
+            if (i + 1 < sequence.length() && sequence[i + 1] == '+')
+            {
                 keyPart = "+NUM"; // numeric keypad '+'
                 i += 2;
-            } else {
+            }
+            else
+            {
                 ++i; // separator, skip
             }
-        } else if (sequence[i] == '-') {
+        }
+        else if (sequence[i] == '-')
+        {
             keyPart = "-NUM"; // numeric keypad '-' if combined with modifiers
             ++i;
-        } else {
+        }
+        else
+        {
             QString current;
             while (i < sequence.length() && sequence[i] != '+' && sequence[i] != '-')
                 current += sequence[i++];
             modifiers << current.trimmed().toUpper();
         }
     }
-
     // Separate modifiers from main key
     QString mainKey;
     QStringList finalModifiers;
-    for (const QString &part : modifiers) {
+    for (const QString &part : modifiers)
+    {
         if (part == "CTRL" || part == "SHIFT" || part == "ALT" || part == "META" || part == "WIN")
             finalModifiers << part;
         else
             mainKey = part;
     }
-
     if (!keyPart.isEmpty())
         mainKey = keyPart; // override if we detected numeric keypad '+/-'
-
     if (!mainKey.isEmpty())
         finalModifiers << mainKey;
-
     return finalModifiers.join("+");
 }
 
@@ -267,35 +275,32 @@ bool NativeHotkeyManager::parseKeySequence(const QString &sequence, UINT &modifi
 {
     modifiers = 0;
     vk = 0;
-
     QString normalized = normalizeKeySequence(sequence);
     QStringList parts = normalized.split('+', Qt::SkipEmptyParts);
     QString keyPart;
-
-    for ( const QString &part : parts) {
+    for ( const QString &part : parts)
+    {
         if (part == "CTRL") modifiers |= MOD_CONTROL;
         else if (part == "SHIFT") modifiers |= MOD_SHIFT;
         else if (part == "ALT") modifiers |= MOD_ALT;
         else if (part == "META") modifiers |= MOD_WIN;
         else
-{
-        keyPart = part;
-if (part=="NUM") keyPart="+NUM";
-qDebug()<<"keyPart->" <<keyPart;
-}
+        {
+            keyPart = part;
+            if (part == "NUM") keyPart = "+NUM";
+            qDebug() << "keyPart->" << keyPart;
+        }
     }
-
     // Detect numeric keypad keys
     if (keyPart == "+NUM") vk = VK_ADD;
     else if (keyPart == "-NUM") vk = VK_SUBTRACT;
     else if (keyMap.contains(keyPart)) vk = keyMap[keyPart];
     else if (keyPart.length() == 1) vk = VkKeyScan(keyPart.at(0).toLatin1()) & 0xFF;
-
-    if (vk == 0) {
+    if (vk == 0)
+    {
         qDebug() << "Unrecognized key:" << keyPart << "from sequence:" << sequence;
         return false;
     }
-
     qDebug() << "Parsed sequence:" << sequence << "→ modifiers:" << modifiers << "vk:" << vk;
     return true;
 }
@@ -303,7 +308,6 @@ qDebug()<<"keyPart->" <<keyPart;
 QString NativeHotkeyManager::keySequenceToString(const ParsedKey &parsedKey)
 {
     QStringList parts;
-
     // --- 1. Add modifier names ---
     if (parsedKey.modifiers & MOD_CONTROL)
         parts << "Ctrl";
@@ -313,10 +317,8 @@ QString NativeHotkeyManager::keySequenceToString(const ParsedKey &parsedKey)
         parts << "Alt";
     if (parsedKey.modifiers & MOD_WIN)
         parts << "Win";
-
     // --- 2. Find the key name (reverse lookup in keyMap) ---
     QString mainKeyName;
-
     for (auto it = keyMap.constBegin(); it != keyMap.constEnd(); ++it)
     {
         if (it.value() == parsedKey.mainKey)
@@ -325,7 +327,6 @@ QString NativeHotkeyManager::keySequenceToString(const ParsedKey &parsedKey)
             break;
         }
     }
-
     // --- 3. Handle unknown key codes ---
     if (mainKeyName.isEmpty())
     {
@@ -336,130 +337,128 @@ QString NativeHotkeyManager::keySequenceToString(const ParsedKey &parsedKey)
         else
             mainKeyName = QString("VK_%1").arg(parsedKey.mainKey);
     }
-
     // --- 4. Add main key ---
     parts << mainKeyName;
-
     // --- 5. Join with '+' ---
     return parts.join("+");
 }
 
 //QString NativeHotkeyManager::normalizeKeySequence(const QString &sequence)
 //{
-//    QString s = sequence.trimmed();
-//    QStringList parts;
-//    QString current;
+// QString s = sequence.trimmed();
+// QStringList parts;
+// QString current;
 
 //    // --- Manual parser to preserve '+' and '-' ---
-//    for (int i = 0; i < s.length(); ++i)
-//    {
-//        QChar c = s.at(i);
+// for (int i = 0; i < s.length(); ++i)
+// {
+// QChar c = s.at(i);
 
-//        if (c == '+')
-//        {
-//            if (!current.isEmpty())
-//            {
-//                parts << current.trimmed();
-//                current.clear();
-//            }
+// if (c == '+')
+// {
+// if (!current.isEmpty())
+// {
+// parts << current.trimmed();
+// current.clear();
+// }
 
 //            // double '++' → '+' key
-//            if (i + 1 < s.length() && s.at(i + 1) == '+')
-//            {
-//                parts << "+";
-//                ++i;
-//            }
-//            else if (i == s.length() - 1)
-//            {
-//                parts << "+";
-//            }
-//        }
-//        else
-//        {
-//            current.append(c);
-//        }
-//    }
+// if (i + 1 < s.length() && s.at(i + 1) == '+')
+// {
+// parts << "+";
+// ++i;
+// }
+// else if (i == s.length() - 1)
+// {
+// parts << "+";
+// }
+// }
+// else
+// {
+// current.append(c);
+// }
+// }
 
-//    if (!current.isEmpty())
-//        parts << current.trimmed();
+// if (!current.isEmpty())
+// parts << current.trimmed();
 
-//    QStringList normalized;
-//    QString keyPart;
+// QStringList normalized;
+// QString keyPart;
 
-//    for (const QString &rawPart : parts)
-//    {
-//        QString part = rawPart.trimmed();
+// for (const QString &rawPart : parts)
+// {
+// QString part = rawPart.trimmed();
 
 //        // --- Modifiers ---
-//        if (part.compare("Ctrl", Qt::CaseInsensitive) == 0)
-//            normalized << "CTRL";
-//        else if (part.compare("Alt", Qt::CaseInsensitive) == 0)
-//            normalized << "ALT";
-//        else if (part.compare("Shift", Qt::CaseInsensitive) == 0)
-//            normalized << "SHIFT";
-//        else if (part.compare("Win", Qt::CaseInsensitive) == 0 ||
-//                 part.compare("Meta", Qt::CaseInsensitive) == 0)
-//            normalized << "META";
+// if (part.compare("Ctrl", Qt::CaseInsensitive) == 0)
+// normalized << "CTRL";
+// else if (part.compare("Alt", Qt::CaseInsensitive) == 0)
+// normalized << "ALT";
+// else if (part.compare("Shift", Qt::CaseInsensitive) == 0)
+// normalized << "SHIFT";
+// else if (part.compare("Win", Qt::CaseInsensitive) == 0 ||
+// part.compare("Meta", Qt::CaseInsensitive) == 0)
+// normalized << "META";
 
 //        // --- PLUS / MINUS ---
-//        else if (part.compare("Plus", Qt::CaseInsensitive) == 0)
-//            keyPart = "PLUS";
-//        else if (part.compare("Minus", Qt::CaseInsensitive) == 0)
-//            keyPart = "MINUS";
-//        else if (part == "+")
-//            keyPart = "PLUS";
-//        else if (part == "-")
-//            keyPart = "MINUS";
+// else if (part.compare("Plus", Qt::CaseInsensitive) == 0)
+// keyPart = "PLUS";
+// else if (part.compare("Minus", Qt::CaseInsensitive) == 0)
+// keyPart = "MINUS";
+// else if (part == "+")
+// keyPart = "PLUS";
+// else if (part == "-")
+// keyPart = "MINUS";
 
 //        // --- PAGEUP / PAGEDOWN (aliases PgUp/PgDn) ---
-//        else if (part.compare("PgUp", Qt::CaseInsensitive) == 0)
-//            keyPart = "PAGEUP";
-//        else if (part.compare("PgDn", Qt::CaseInsensitive) == 0)
-//            keyPart = "PAGEDOWN";
-//        else if (part.compare("PageUp", Qt::CaseInsensitive) == 0)
-//            keyPart = "PAGEUP";
-//        else if (part.compare("PageDown", Qt::CaseInsensitive) == 0)
-//            keyPart = "PAGEDOWN";
+// else if (part.compare("PgUp", Qt::CaseInsensitive) == 0)
+// keyPart = "PAGEUP";
+// else if (part.compare("PgDn", Qt::CaseInsensitive) == 0)
+// keyPart = "PAGEDOWN";
+// else if (part.compare("PageUp", Qt::CaseInsensitive) == 0)
+// keyPart = "PAGEUP";
+// else if (part.compare("PageDown", Qt::CaseInsensitive) == 0)
+// keyPart = "PAGEDOWN";
 
 //        // --- ARROW KEYS ---
-//        else if (part.compare("Up", Qt::CaseInsensitive) == 0)
-//            keyPart = "UP";
-//        else if (part.compare("Down", Qt::CaseInsensitive) == 0)
-//            keyPart = "DOWN";
-//        else if (part.compare("Left", Qt::CaseInsensitive) == 0)
-//            keyPart = "LEFT";
-//        else if (part.compare("Right", Qt::CaseInsensitive) == 0)
-//            keyPart = "RIGHT";
+// else if (part.compare("Up", Qt::CaseInsensitive) == 0)
+// keyPart = "UP";
+// else if (part.compare("Down", Qt::CaseInsensitive) == 0)
+// keyPart = "DOWN";
+// else if (part.compare("Left", Qt::CaseInsensitive) == 0)
+// keyPart = "LEFT";
+// else if (part.compare("Right", Qt::CaseInsensitive) == 0)
+// keyPart = "RIGHT";
 
 //        // --- Default case ---
-//        else
-//            keyPart = part.toUpper();
-//    }
+// else
+// keyPart = part.toUpper();
+// }
 
-//    if (!keyPart.isEmpty())
-//        normalized << keyPart;
+// if (!keyPart.isEmpty())
+// normalized << keyPart;
 
-//    return normalized.join("+");
+// return normalized.join("+");
 //}
 
 //QString NativeHotkeyManager::normalizeKeySequence(const QString &sequence)
 //{
-//    QStringList parts = sequence.split('+', Qt::SkipEmptyParts);
-//    QStringList modifiers;
-//    QString keyPart;
-//    for (const QString &rawPart : parts)
-//    {
-//        QString part = rawPart.trimmed();
-//        if (part.compare("Ctrl", Qt::CaseInsensitive) == 0) modifiers << "CTRL";
-//        else if (part.compare("Alt", Qt::CaseInsensitive) == 0) modifiers << "ALT";
-//        else if (part.compare("Shift", Qt::CaseInsensitive) == 0) modifiers << "SHIFT";
-//        else if (part.compare("Win", Qt::CaseInsensitive) == 0 ||
-//            part.compare("Meta", Qt::CaseInsensitive) == 0) modifiers << "META";
-//        else keyPart += part.toUpper(); // concatena tutto ciò che non è modificatore
-//    }
-//    if (!keyPart.isEmpty())
-//        modifiers << keyPart;
-//    return modifiers.join("+");
+// QStringList parts = sequence.split('+', Qt::SkipEmptyParts);
+// QStringList modifiers;
+// QString keyPart;
+// for (const QString &rawPart : parts)
+// {
+// QString part = rawPart.trimmed();
+// if (part.compare("Ctrl", Qt::CaseInsensitive) == 0) modifiers << "CTRL";
+// else if (part.compare("Alt", Qt::CaseInsensitive) == 0) modifiers << "ALT";
+// else if (part.compare("Shift", Qt::CaseInsensitive) == 0) modifiers << "SHIFT";
+// else if (part.compare("Win", Qt::CaseInsensitive) == 0 ||
+// part.compare("Meta", Qt::CaseInsensitive) == 0) modifiers << "META";
+// else keyPart += part.toUpper(); // concatena tutto ciò che non è modificatore
+// }
+// if (!keyPart.isEmpty())
+// modifiers << keyPart;
+// return modifiers.join("+");
 //}
 
 void NativeHotkeyManager::setApplicationName(const QString &sApplicationName)

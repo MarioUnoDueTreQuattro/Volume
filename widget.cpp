@@ -6,8 +6,8 @@
 #include <QSettings>
 #include <QMenu>
 #include <QTimer>
-#include "hotkeyeditorwidget.h"
 #include "hotkeyeditor.h"
+#include "settingsdialog.h"
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -95,25 +95,26 @@ Widget::Widget(QWidget *parent)
     transparentButton->setFixedSize (m_iButtonSize, m_iButtonSize);
     transparentButton->setContextMenuPolicy (Qt::CustomContextMenu);
     connect(transparentButton, &QPushButton::customContextMenuRequested, this, &Widget::showOpacityContextMenu);
+    connect(this, &QWidget::customContextMenuRequested, this, &Widget::showContextMenu);
     loadSettings ();
     // adjustSize();
     //QTimer::singleShot(1000, this, SLOT(initializeHotkeyManager()));
-    NativeHotkeyManager *manager = NativeHotkeyManager::instance(this);
-    manager->setOrganizationName (QCoreApplication::organizationName ());
-    manager->setApplicationName (QCoreApplication::applicationName());
+    hotkeyMgr = NativeHotkeyManager::instance(this);
+    // hotkeyMgr->setOrganizationName (qApp->organizationName ());
+    // hotkeyMgr->setApplicationName (qApp->applicationName ());
     // manager->saveHotkey("1", "Meta+Alt+M");
     // manager->saveHotkey("2", "Ctrl+Alt+T");
-    // manager->saveHotkey("3", "Meta+Alt+NUMPADPLUS");
-    // manager->saveHotkey("4", "Meta+Alt+NumPad-");
-//    HotkeyEditor *hot=new HotkeyEditor(this);
-//    hot->exec ();
-    manager->bindAction(1, std::bind(&Widget::on_muteButton_clicked, this));
-    manager->bindAction(2, std::bind(&Widget::toggleOnTop, this));
-    manager->bindAction(3, std::bind(&Widget::handleVolumeUp, this));
-    manager->bindAction(4, std::bind(&Widget::handleVolumeDown, this));
-    //manager->bindAction(5, std::bind(&Widget::handleVolumeUp, this));
-    manager->loadHotkeys();
-    qDebug() << "Hotkey actions registered:" << manager->registeredHotkeyNames();
+    // manager->saveHotkey("3", "Meta+Alt++");
+    // manager->saveHotkey("4", "Meta+Alt+-");
+    // HotkeyEditor *hot=new HotkeyEditor(this);
+    // hot->exec ();
+    hotkeyMgr->bindAction(1, std::bind(&Widget::on_muteButton_clicked, this));
+    hotkeyMgr->bindAction(2, std::bind(&Widget::toggleOnTop, this));
+    hotkeyMgr->bindAction(3, std::bind(&Widget::handleVolumeUp, this));
+    hotkeyMgr->bindAction(4, std::bind(&Widget::handleVolumeDown, this));
+    hotkeyMgr->bindAction(5, std::bind(&Widget::toggleTransparency, this));
+    hotkeyMgr->loadHotkeys();
+    qDebug() << "Hotkey actions registered:" << hotkeyMgr->registeredHotkeyNames();
     // QDialog *dialog = new QDialog(this);
     // dialog->setWindowTitle("Hotkey Editor");
     // QVBoxLayout *layout = new QVBoxLayout(dialog);
@@ -122,9 +123,7 @@ Widget::Widget(QWidget *parent)
     // connect(editor, SIGNAL(hotkeyAssigned(QString, QString)),
     // this, SLOT(onHotkeyAssigned(QString, QString)));
     // dialog->exec(); // blocca finché non chiudi
-
-   // testHotKey(manager);
-
+    // testHotKey(manager);
 }
 
 Widget::~Widget()
@@ -134,7 +133,7 @@ Widget::~Widget()
 
 void Widget::closeEvent(QCloseEvent *event)
 {
-    NativeHotkeyManager::instance(this)-> unregisterAllHotkeys();
+    hotkeyMgr-> unregisterAllHotkeys();
     saveSettings ();
     event->accept();
     QWidget::closeEvent(event);
@@ -265,6 +264,38 @@ void Widget::enterEvent(QEvent *event)
 void Widget::leaveEvent(QEvent *event)
 {
     if (m_bIsTransparent) this->setWindowOpacity (m_dOpacity);
+}
+
+void Widget::showContextMenu(const QPoint &pos)
+{
+    QMenu contextMenu(this);
+    QAction *settingsAction = contextMenu.addAction(tr("Settings"));
+    QAction *selectedAction = contextMenu.exec(this->mapToGlobal(pos));
+    if (selectedAction == settingsAction)
+    {
+        // HotkeyEditor *hot=new HotkeyEditor(this);
+        // hot->exec ();
+        SettingsDialog settingsDialog;
+        connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(settingsDialogAccepted()));
+        // connect(&settingsDialog, SIGNAL(applyClicked()), this, SLOT(settingsDialogAccepted()));
+        //    // cd.setParent (this);
+        settingsDialog.setWindowTitle("Settings");
+        // NativeHotkeyManager *manager = NativeHotkeyManager::instance(this);
+        // manager->unregisterAllHotkeys ();
+        settingsDialog.exec();
+        // hotkeyMgr->bindAction(1, std::bind(&Widget::on_muteButton_clicked, this));
+        // hotkeyMgr->bindAction(2, std::bind(&Widget::toggleOnTop, this));
+        // hotkeyMgr->bindAction(3, std::bind(&Widget::handleVolumeUp, this));
+        // hotkeyMgr->bindAction(4, std::bind(&Widget::handleVolumeDown, this));
+        // hotkeyMgr->bindAction(5, std::bind(&Widget::toggleTransparency, this));
+        hotkeyMgr->loadHotkeys();
+        qDebug() << "Hotkey actions registered:" << hotkeyMgr->registeredHotkeyNames();
+    }
+}
+
+void Widget::settingsDialogAccepted()
+{
+    qDebug() << __PRETTY_FUNCTION__;
 }
 
 void Widget::showOpacityContextMenu(const QPoint &pos)
@@ -614,6 +645,5 @@ void Widget::updateCursorShape(const QPoint &pos)
 void Widget::onHotkeyAssigned(const QString &name, const QString &sequence)
 {
     qDebug() << __PRETTY_FUNCTION__;
-    NativeHotkeyManager::instance(this)->saveHotkey(name, sequence);
+    hotkeyMgr->saveHotkey(name, sequence);
 }
-

@@ -35,7 +35,7 @@ public:
     void setOrganizationName(const QString &sOrganizationName);
     void setApplicationName(const QString &sApplicationName);
     // QString normalizeKeySequence(const QString &sequence);
-    ParsedKey parseKeySequence(const QString &sequence);
+    //ParsedKey parseKeySequence(const QString &sequence);
     QString keySequenceToString(const ParsedKey &parsedKey);
 signals:
     void hotkeyPressed(int id);

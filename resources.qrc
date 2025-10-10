@@ -8,5 +8,6 @@
         <file>img/Transparent.png</file>
         <file>img/UnPin.png</file>
         <file>img/Close.png</file>
+        <file>img/icons8-clear_black-48.png</file>
     </qresource>
 </RCC>

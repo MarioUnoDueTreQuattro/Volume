@@ -170,7 +170,7 @@ void HotkeyEditor::on_btnUpdate_clicked()
 // --- Save all hotkeys to QSettings ---
 void HotkeyEditor::saveHotkeys()
 {
-    QSettings settings;
+    QSettings settings("andreag","Volume");
     settings.beginGroup("Hotkeys");
     settings.remove(""); // clear previous
     for (auto id : hotkeys.keys())
@@ -184,7 +184,7 @@ void HotkeyEditor::loadHotkeys()
     ui->hotkeyTable->clearContents();
     ui->hotkeyTable->setRowCount(0);
 
-    QSettings settings;
+    QSettings settings("andreag","Volume");
     settings.beginGroup("Hotkeys");
     QStringList keys = settings.childKeys();
 
@@ -203,18 +203,18 @@ void HotkeyEditor::loadHotkeys()
 
         int hotkeyId = name.toInt();
         HWND hwnd = reinterpret_cast<HWND>(this->winId());
-        if (!RegisterHotKey(hwnd, hotkeyId, modifiers, vk))
-        {
-            qDebug() << "Failed to register hotkey:" << sequence << "Error:" << GetLastError();
-            continue;
-        }
+//        if (!RegisterHotKey(hwnd, hotkeyId, modifiers, vk))
+//        {
+//            qDebug() << "Failed to register hotkey:" << sequence << "Error:" << GetLastError();
+//            continue;
+//        }
 
         HotkeyEntry entry;
         entry.id = hotkeyId;
         entry.sequence = sequence;
         entry.action = [sequence]() { qDebug() << "Hotkey pressed:" << sequence; };
         hotkeys[hotkeyId] = entry;
-        hotkeyMgr->bindAction(hotkeyId, entry.action);
+        //hotkeyMgr->bindAction(hotkeyId, entry.action);
         addHotkeyToTable(entry);
     }
 

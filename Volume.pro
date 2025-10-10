@@ -10,23 +10,24 @@ CONFIG += c++11
 
 SOURCES += \
     hotkeyeditor.cpp \
-    hotkeyeditorwidget.cpp \
     main.cpp \
     nativehotkeymanager.cpp \
+    settingsdialog.cpp \
     systemvolumecontroller.cpp \
     widget.cpp \
     windowbutton.cpp
 
 HEADERS += \
     hotkeyeditor.h \
-    hotkeyeditorwidget.h \
     nativehotkeymanager.h \
+    settingsdialog.h \
     systemvolumecontroller.h \
     widget.h \
     windowbutton.h
 
 FORMS += \
     hotkeyeditor.ui \
+    settingsdialog.ui \
     widget.ui
 
 LIBS += -lole32

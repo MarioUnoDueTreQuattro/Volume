@@ -28,6 +28,7 @@ public slots:
 private:
     Ui::Widget *ui;
     SystemVolumeController *m_systemVolumeController;
+    NativeHotkeyManager *hotkeyMgr;
     bool m_bIsOnTop;
     bool m_bIsTransparent;
     qreal m_dOpacity;
@@ -56,7 +57,6 @@ private:
     void updateButtons();
     void handleVolumeDown();
     void handleVolumeUp();
-    
 protected:
     void moveEvent(QMoveEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
@@ -79,5 +79,7 @@ private slots:
     void on_muteButton_clicked();
     void toggleOnTop();
     void toggleTransparency();
+    void showContextMenu(const QPoint &pos);
+    void settingsDialogAccepted();
 };
 #endif // WIDGET_H

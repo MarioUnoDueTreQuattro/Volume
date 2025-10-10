@@ -25,15 +25,12 @@ public:
 private slots:
     void on_btnRegister_clicked();
     void on_btnRemove_clicked();
-
     void on_btnUpdate_clicked();
-
 private:
     Ui::HotkeyEditor *ui;
     NativeHotkeyManager *hotkeyMgr;
     int nextHotkeyId = 1;
     QMap<int, HotkeyEntry> hotkeys; // id -> hotkey info
-
     void addHotkeyToTable(const HotkeyEntry &entry);
     void setupTable();
     void loadHotkeys();
