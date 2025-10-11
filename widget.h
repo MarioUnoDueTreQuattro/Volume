@@ -11,6 +11,7 @@
 #include <QPen>
 #include "windowbutton.h"
 #include "nativehotkeymanager.h"
+#include "osdwidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -29,6 +30,7 @@ private:
     Ui::Widget *ui;
     SystemVolumeController *m_systemVolumeController;
     NativeHotkeyManager *hotkeyMgr;
+    OSDWidget *osd;
     bool m_bIsOnTop;
     bool m_bIsTransparent;
     qreal m_dOpacity;

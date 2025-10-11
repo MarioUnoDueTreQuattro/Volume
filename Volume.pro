@@ -12,6 +12,7 @@ SOURCES += \
     hotkeyeditor.cpp \
     main.cpp \
     nativehotkeymanager.cpp \
+    osdwidget.cpp \
     settingsdialog.cpp \
     systemvolumecontroller.cpp \
     widget.cpp \
@@ -20,6 +21,7 @@ SOURCES += \
 HEADERS += \
     hotkeyeditor.h \
     nativehotkeymanager.h \
+    osdwidget.h \
     settingsdialog.h \
     systemvolumecontroller.h \
     widget.h \
@@ -44,3 +46,8 @@ DISTFILES += \
 
 RESOURCES += \
     resources.qrc
+
+QT += winextras
+
+# Disabilita completamente i messaggi qDebug() nella build di rilascio (Release)
+CONFIG(release, debug|release): DEFINES += QT_NO_DEBUG_OUTPUT

@@ -124,10 +124,22 @@ Widget::Widget(QWidget *parent)
     // this, SLOT(onHotkeyAssigned(QString, QString)));
     // dialog->exec(); // blocca finché non chiudi
     // testHotKey(manager);
+    osd = new OSDWidget();
+    // Optional: make the OSD click-through so it doesn't intercept mouse.
+    osd->setClickThrough(true);
+    // QObject::connect(btn, SIGNAL(clicked()), osd, SLOT(hide())); // just demo slot use
+    //    // Instead of lambda, create a small QObject wrapper to call showMessage or call from a slot.
+    // QObject::connect(btn, SIGNAL(clicked()), &demo, SLOT(show())); // keep simple demo
+    //    // For demo - show OSD when the button is clicked via a classic slot call:
+    // QObject::connect(btn, SIGNAL(clicked()), osd, SLOT(show())); // we'll call showMessage manually below
+    //    // Alternatively call showMessage() directly from code:
+    // QObject::connect(btn, SIGNAL(clicked()), demo.parent(), SLOT(deleteLater())); // no-op to avoid warnings
 }
 
 Widget::~Widget()
 {
+    delete osd;
+    osd = nullptr;
     delete ui;
 }
 
@@ -229,6 +241,9 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
     }
     else if (mousePressed)
     {
+        QPoint deltaFromStart = event->globalPos() - mouseStartPos;
+        if (mousePressed && deltaFromStart.manhattanLength() < 10)
+            return; // ignore jitter, treat as no move
         QPoint delta = event->globalPos() - mouseStartPos;
         move(windowStartRect.topLeft() + delta);
     }
@@ -270,6 +285,7 @@ void Widget::showContextMenu(const QPoint &pos)
 {
     QMenu contextMenu(this);
     QAction *settingsAction = contextMenu.addAction(tr("Settings"));
+    settingsAction->setIcon (QIcon(":/img/img/icons8-wrench-48.png"));
     QAction *selectedAction = contextMenu.exec(this->mapToGlobal(pos));
     if (selectedAction == settingsAction)
     {
@@ -279,7 +295,7 @@ void Widget::showContextMenu(const QPoint &pos)
         connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(settingsDialogAccepted()));
         // connect(&settingsDialog, SIGNAL(applyClicked()), this, SLOT(settingsDialogAccepted()));
         //    // cd.setParent (this);
-        settingsDialog.setWindowTitle("Settings");
+        settingsDialog.setWindowTitle("Volume settings");
         // NativeHotkeyManager *manager = NativeHotkeyManager::instance(this);
         // manager->unregisterAllHotkeys ();
         settingsDialog.exec();
@@ -446,6 +462,7 @@ void Widget::handleVolumeUp()
     m_systemVolumeController->setVolume (fVol);
     ui->volumeSlider->setValue (iCurVol);
     ui->volumeLabel->setText(QString::number(iCurVol) + "%");
+    osd->showMessage ("Volume: " + QString::number(iCurVol) + "%");
 }
 
 void Widget::handleVolumeDown()
@@ -457,6 +474,7 @@ void Widget::handleVolumeDown()
     m_systemVolumeController->setVolume (fVol);
     ui->volumeSlider->setValue (iCurVol);
     ui->volumeLabel->setText(QString::number(iCurVol) + "%");
+    osd->showMessage ("Volume: " + QString::number(iCurVol) + "%");
 }
 
 void Widget::on_muteButton_clicked()
@@ -471,6 +489,7 @@ void Widget::on_muteButton_clicked()
         ui->volumeSlider->setValue (iVol);
         ui->volumeLabel->setText(QString::number(iVol) + "%");
         ui->muteButton->setChecked (false);
+        osd->showMessage ("Unmute");
     }
     else
     {
@@ -478,6 +497,7 @@ void Widget::on_muteButton_clicked()
         m_systemVolumeController->mute (true);
         // ui->volumeLabel->setText("0%");
         ui->muteButton->setChecked (true);
+        osd->showMessage ("Mute");
     }
 }
 
@@ -490,12 +510,14 @@ void Widget::toggleOnTop()
         flags &= ~Qt::WindowStaysOnTopHint;
         //onTopButton->setText("↑");
         onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+        osd->showMessage ("Always on top disabled");
     }
     else
     {
         flags |= Qt::WindowStaysOnTopHint;
         //onTopButton->setText("↓");
         onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
+        osd->showMessage ("Always on top enabled");
     }
     setWindowFlags(flags);
     show(); // Reapply flags
