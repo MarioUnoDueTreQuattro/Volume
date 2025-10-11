@@ -11,7 +11,7 @@
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
-    , ui(new Ui::Widget), mousePressed(false), resizing(false), resizeMargin(4), topButtonsMargin(3)
+    , ui(new Ui::Widget), m_bMoving(false), m_bMousePressed(false), m_bResizing(false), m_iResizeMargin(4), m_iTopButtonsMargin(3)
 {
     ui->setupUi(this);
     setWindowTitle ("Volume");
@@ -62,22 +62,22 @@ Widget::Widget(QWidget *parent)
     updateMuteButtonIcon ();
     m_iButtonSize = 12;
     closeButton = new WindowButton("", this);
-    closeButton->setGeometry(width() - m_iButtonSize, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    closeButton->setGeometry(width() - m_iButtonSize, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     closeButton->setStyleSheet("QPushButton { border: none; }");
     closeButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
     closeButton->setIcon (QIcon(":/img/img/Close.png"));
     minimizeButton = new WindowButton("", this);
-    minimizeButton->setGeometry(width() - m_iButtonSize * 2, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    minimizeButton->setGeometry(width() - m_iButtonSize * 2, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     minimizeButton->setStyleSheet("QPushButton { border: none; }");
     minimizeButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
     minimizeButton->setIcon (QIcon(":/img/img/Minimize.png"));
     onTopButton = new WindowButton("", this);
-    onTopButton->setGeometry(width() - m_iButtonSize * 3, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    onTopButton->setGeometry(width() - m_iButtonSize * 3, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     onTopButton->setStyleSheet("QPushButton { border: none; }");
     onTopButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
     onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
     transparentButton = new WindowButton("", this);
-    transparentButton->setGeometry(width() - m_iButtonSize * 4, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    transparentButton->setGeometry(width() - m_iButtonSize * 4, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     transparentButton->setStyleSheet("QPushButton { border: none; }");
     transparentButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
     transparentButton->setIcon (QIcon(":/img/img/Transparent.png"));
@@ -158,10 +158,12 @@ void Widget::resizeEvent(QResizeEvent *event)
 {
     // 1. Chiami la versione base del gestore di eventi
     QWidget::resizeEvent (event);
-    closeButton->setGeometry(width() - m_iButtonSize, topButtonsMargin, m_iButtonSize, m_iButtonSize);
-    minimizeButton->setGeometry(width() - m_iButtonSize * 2, topButtonsMargin, m_iButtonSize, m_iButtonSize);
-    onTopButton->setGeometry(width() - m_iButtonSize * 3, topButtonsMargin, m_iButtonSize, m_iButtonSize);
-    transparentButton->setGeometry(width() - m_iButtonSize * 4, topButtonsMargin, m_iButtonSize, m_iButtonSize);
+    closeButton->setGeometry(width() - m_iButtonSize, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
+    minimizeButton->setGeometry(width() - m_iButtonSize * 2, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
+    onTopButton->setGeometry(width() - m_iButtonSize * 3, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
+    transparentButton->setGeometry(width() - m_iButtonSize * 4, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
+    int iWidth = m_iButtonSize * 4 + 2;
+    this->resize (iWidth, this->height ());
     // 2. Imposti il vincolo di larghezza
     // this->setFixedWidth (48);
     // 3. ✨ Forza il genitore ad aggiornare la sua dimensione preferita
@@ -176,43 +178,43 @@ void Widget::mousePressEvent(QMouseEvent *event)
     // qDebug() << __PRETTY_FUNCTION__;
     QRect rect = this->rect();
     QPoint pos = event->pos();
-    if (pos.x() <= resizeMargin && pos.y() <= resizeMargin)
-        setCursor(Qt::SizeFDiagCursor); // Top-left
-    else if (pos.x() >= rect.width() - resizeMargin && pos.y() <= resizeMargin)
-        setCursor(Qt::SizeBDiagCursor); // Top-right
-    else if (pos.x() <= resizeMargin && pos.y() >= rect.height() - resizeMargin)
-        setCursor(Qt::SizeBDiagCursor); // Bottom-left
-    else if (pos.x() >= rect.width() - resizeMargin && pos.y() >= rect.height() - resizeMargin)
-        setCursor(Qt::SizeFDiagCursor); // Bottom-right
-    else if (pos.x() <= resizeMargin)
-        setCursor(Qt::SizeHorCursor); // Left
-    else if (pos.x() >= rect.width() - resizeMargin)
-        setCursor(Qt::SizeHorCursor); // Right
-    else if (pos.y() <= resizeMargin)
+//    if (pos.x() <= m_iResizeMargin && pos.y() <= m_iResizeMargin)
+//        setCursor(Qt::SizeFDiagCursor); // Top-left
+//    else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() <= m_iResizeMargin)
+//        setCursor(Qt::SizeBDiagCursor); // Top-right
+//    else if (pos.x() <= m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
+//        setCursor(Qt::SizeBDiagCursor); // Bottom-left
+//    else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
+//        setCursor(Qt::SizeFDiagCursor); // Bottom-right
+//    else if (pos.x() <= m_iResizeMargin)
+//        setCursor(Qt::SizeHorCursor); // Left
+//    else if (pos.x() >= rect.width() - m_iResizeMargin)
+//        setCursor(Qt::SizeHorCursor); // Right
+    /*else*/ if (pos.y() <= m_iResizeMargin)
         setCursor(Qt::SizeVerCursor); // Top
-    else if (pos.y() >= rect.height() - resizeMargin)
+    else if (pos.y() >= rect.height() - m_iResizeMargin)
         setCursor(Qt::SizeVerCursor); // Bottom
     else
         setCursor(Qt::ArrowCursor); // Default
     // Store the position where the mouse was pressed
     if (event->button() == Qt::LeftButton)
     {
-        mousePressed = true;
-        mouseStartPos = event->globalPos();
-        windowStartRect = geometry();
+        m_bMousePressed = true;
+        m_mouseStartPos = event->globalPos();
+        m_windowStartRect = geometry();
         // Detect if mouse is near border
-        resizing = false;
-        resizeDirection = Qt::Edges();
-        if (pos.x() <= resizeMargin)
-            resizeDirection |= Qt::LeftEdge;
-        else if (pos.x() >= rect.width() - resizeMargin)
-            resizeDirection |= Qt::RightEdge;
-        if (pos.y() <= resizeMargin)
-            resizeDirection |= Qt::TopEdge;
-        else if (pos.y() >= rect.height() - resizeMargin)
-            resizeDirection |= Qt::BottomEdge;
-        if (resizeDirection != Qt::Edges())
-            resizing = true;
+        m_bResizing = false;
+        m_resizeDirection = Qt::Edges();
+        if (pos.x() <= m_iResizeMargin)
+            m_resizeDirection |= Qt::LeftEdge;
+        else if (pos.x() >= rect.width() - m_iResizeMargin)
+            m_resizeDirection |= Qt::RightEdge;
+        if (pos.y() <= m_iResizeMargin)
+            m_resizeDirection |= Qt::TopEdge;
+        else if (pos.y() >= rect.height() - m_iResizeMargin)
+            m_resizeDirection |= Qt::BottomEdge;
+        if (m_resizeDirection != Qt::Edges())
+            m_bResizing = true;
     }
 }
 
@@ -226,29 +228,30 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
         setCursor(Qt::ArrowCursor);
         // return;
     }
-    if (resizing)
+    if (m_bResizing)
     {
-        QPoint delta = event->globalPos() - mouseStartPos;
-        QRect newRect = windowStartRect;
-        if (resizeDirection & Qt::LeftEdge)
-            newRect.setLeft(windowStartRect.left() + delta.x());
-        if (resizeDirection & Qt::RightEdge)
-            newRect.setRight(windowStartRect.right() + delta.x());
-        if (resizeDirection & Qt::TopEdge)
-            newRect.setTop(windowStartRect.top() + delta.y());
-        if (resizeDirection & Qt::BottomEdge)
-            newRect.setBottom(windowStartRect.bottom() + delta.y());
+        QPoint delta = event->globalPos() - m_mouseStartPos;
+        QRect newRect = m_windowStartRect;
+        if (m_resizeDirection & Qt::LeftEdge)
+            newRect.setLeft(m_windowStartRect.left() + delta.x());
+        if (m_resizeDirection & Qt::RightEdge)
+            newRect.setRight(m_windowStartRect.right() + delta.x());
+        if (m_resizeDirection & Qt::TopEdge)
+            newRect.setTop(m_windowStartRect.top() + delta.y());
+        if (m_resizeDirection & Qt::BottomEdge)
+            newRect.setBottom(m_windowStartRect.bottom() + delta.y());
         // Enforce minimum size
         if (newRect.width() >= minimumWidth() && newRect.height() >= minimumHeight())
             setGeometry(newRect);
     }
-    else if (mousePressed)
+    else if (m_bMousePressed)
     {
-        QPoint deltaFromStart = event->globalPos() - mouseStartPos;
-        if (mousePressed && deltaFromStart.manhattanLength() < 10)
+        QPoint deltaFromStart = event->globalPos() - m_mouseStartPos;
+        if (m_bMousePressed && deltaFromStart.manhattanLength() < 10 && m_bMoving == false)
             return; // ignore jitter, treat as no move
-        QPoint delta = event->globalPos() - mouseStartPos;
-        move(windowStartRect.topLeft() + delta);
+        QPoint delta = event->globalPos() - m_mouseStartPos;
+        move(m_windowStartRect.topLeft() + delta);
+        m_bMoving = true;
     }
 }
 
@@ -259,8 +262,9 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
     // Stop dragging when mouse is released
     if (event->button() == Qt::LeftButton)
     {
-        mousePressed = false;
-        resizing = false;
+        m_bMousePressed = false;
+        m_bResizing = false;
+        m_bMoving = false;
     }
 }
 
@@ -672,21 +676,21 @@ void Widget::updateButtons()
 void Widget::updateCursorShape(const QPoint &pos)
 {
     QRect rect = this->rect();
-    if (pos.x() <= resizeMargin && pos.y() <= resizeMargin)
-        setCursor(Qt::SizeFDiagCursor);
-    else if (pos.x() >= rect.width() - resizeMargin && pos.y() <= resizeMargin)
-        setCursor(Qt::SizeBDiagCursor);
-    else if (pos.x() <= resizeMargin && pos.y() >= rect.height() - resizeMargin)
-        setCursor(Qt::SizeBDiagCursor);
-    else if (pos.x() >= rect.width() - resizeMargin && pos.y() >= rect.height() - resizeMargin)
-        setCursor(Qt::SizeFDiagCursor);
-    else if (pos.x() <= resizeMargin)
-        setCursor(Qt::SizeHorCursor);
-    else if (pos.x() >= rect.width() - resizeMargin)
-        setCursor(Qt::SizeHorCursor);
-    else if (pos.y() <= resizeMargin)
+//    if (pos.x() <= m_iResizeMargin && pos.y() <= m_iResizeMargin)
+//        setCursor(Qt::SizeFDiagCursor);
+//    else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() <= m_iResizeMargin)
+//        setCursor(Qt::SizeBDiagCursor);
+//    else if (pos.x() <= m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
+//        setCursor(Qt::SizeBDiagCursor);
+//    else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
+//        setCursor(Qt::SizeFDiagCursor);
+//    else if (pos.x() <= m_iResizeMargin)
+//        setCursor(Qt::SizeHorCursor);
+//    else if (pos.x() >= rect.width() - m_iResizeMargin)
+//        setCursor(Qt::SizeHorCursor);
+    /*else*/ if (pos.y() <= m_iResizeMargin)
         setCursor(Qt::SizeVerCursor);
-    else if (pos.y() >= rect.height() - resizeMargin)
+    else if (pos.y() >= rect.height() - m_iResizeMargin)
         setCursor(Qt::SizeVerCursor);
     else
         setCursor(Qt::ArrowCursor);
