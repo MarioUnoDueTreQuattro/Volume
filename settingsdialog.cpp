@@ -75,6 +75,7 @@ void SettingsDialog::saveHotKeys()
 void SettingsDialog::on_buttonBox_accepted()
 {
     QSettings settings;
+    settings.setValue ("TrayIcon", ui->checkBoxTray->isChecked ());
     settings.setValue ("OSD_Enabled", ui->checkBoxOSD->isChecked ());
     settings.setValue ("OSD_TextSize", ui->spinBoxOSDTextSize->value ());
     settings.setValue ("OSD_Duration", ui->spinBoxOSDDuration->value ());
@@ -89,6 +90,8 @@ void SettingsDialog::on_buttonBox_accepted()
 void SettingsDialog::loadSettings()
 {
     QSettings settings;
+    bool bTray = settings.value ("TrayIcon", true).toBool ();
+    ui->checkBoxTray->setChecked (bTray);
     bool bOSD_Enabled = settings.value ("OSD_Enabled", true).toBool ();
     int iTextSize = settings.value ("OSD_TextSize", 16).toInt ();
     int iDuration = settings.value ("OSD_Duration", 2000).toInt ();

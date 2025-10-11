@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QPainter>
 #include <QPen>
+#include <QSystemTrayIcon>
 #include "windowbutton.h"
 #include "nativehotkeymanager.h"
 #include "osdwidget.h"
@@ -28,13 +29,17 @@ public:
 public slots:
 private:
     Ui::Widget *ui;
+    QSystemTrayIcon *m_SystemTrayIcon;
+    QMenu *m_TrayMenu;
     SystemVolumeController *m_systemVolumeController;
     NativeHotkeyManager *hotkeyMgr;
     OSDWidget *osd;
+    bool m_bTrayIcon;
     bool m_bOSD_Enabled;
     int m_iOSD_TextSize;
     int m_iOSD_Duration;
     QString m_sOSDPosition;
+    bool m_bWindowVisible;
     bool m_bIsOnTop;
     bool m_bIsTransparent;
     qreal m_dOpacity;
@@ -64,6 +69,7 @@ private:
     void updateButtons();
     void handleVolumeDown();
     void handleVolumeUp();
+    void createTrayIconAndMenu();
 protected:
     void moveEvent(QMoveEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
@@ -75,6 +81,10 @@ protected:
     void enterEvent(QEvent *event) override;
     void leaveEvent(QEvent *event) override;
 private slots:
+    // Slot connected to the 'Quit' action in the tray menu
+    void trayQuitApplication();
+    // Slot connected to a click on the tray icon itself
+    void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void onHotkeyAssigned(const QString &name, const QString &sequence);
     void onOpacityActionTriggered();
     void showOpacityContextMenu(const QPoint &pos);
@@ -88,6 +98,7 @@ private slots:
     void toggleTransparency();
     void showContextMenu(const QPoint &pos);
     void settingsDialogAccepted();
-    void setOSDSettings();
+    void updateSettings();
+    void showSettings();
 };
 #endif // WIDGET_H

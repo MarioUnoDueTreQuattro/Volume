@@ -11,7 +11,7 @@
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
-    , ui(new Ui::Widget), m_bMoving(false), m_bMousePressed(false), m_bResizing(false), m_iResizeMargin(4), m_iTopButtonsMargin(3)
+    , ui(new Ui::Widget), m_bWindowVisible(true), m_bTrayIcon(true), m_bMoving(false), m_bMousePressed(false), m_bResizing(false), m_iResizeMargin(4), m_iTopButtonsMargin(3)
 {
     ui->setupUi(this);
     setWindowTitle ("Volume");
@@ -127,7 +127,7 @@ Widget::Widget(QWidget *parent)
     osd = new OSDWidget();
     // Optional: make the OSD click-through so it doesn't intercept mouse.
     osd->setClickThrough(true);
-    QTimer::singleShot( 100, this, SLOT(setOSDSettings()) );
+    QTimer::singleShot( 100, this, SLOT(updateSettings()) );
     // osd->setTextSize (m_iOSD_TextSize);
     // osd->setDuration (m_iOSD_Duration);
     // QObject::connect(btn, SIGNAL(clicked()), osd, SLOT(hide())); // just demo slot use
@@ -137,20 +137,57 @@ Widget::Widget(QWidget *parent)
     // QObject::connect(btn, SIGNAL(clicked()), osd, SLOT(show())); // we'll call showMessage manually below
     //    // Alternatively call showMessage() directly from code:
     // QObject::connect(btn, SIGNAL(clicked()), demo.parent(), SLOT(deleteLater())); // no-op to avoid warnings
+    createTrayIconAndMenu();
+    if (m_bTrayIcon)
+    {
+        m_SystemTrayIcon->show();
+        qApp->setQuitOnLastWindowClosed(false);
+        if (m_bWindowVisible == false) QTimer::singleShot( 100, this, SLOT(hide()) );
+    }
+    else
+    {
+        m_SystemTrayIcon->hide ();
+        qApp->setQuitOnLastWindowClosed(true);
+    }
 }
 
 Widget::~Widget()
 {
+    qDebug() << __PRETTY_FUNCTION__;
     delete osd;
     osd = nullptr;
+    hotkeyMgr-> unregisterAllHotkeys();
+    saveSettings ();
+    qDebug() << "saveSettings";
     delete ui;
 }
 
 void Widget::closeEvent(QCloseEvent *event)
 {
-    hotkeyMgr-> unregisterAllHotkeys();
-    saveSettings ();
-    event->accept();
+    qDebug() << __PRETTY_FUNCTION__;
+    // CRITICAL POINT: When the user clicks the 'X' button,
+    // we want to hide the window, not close the application.
+    if (m_SystemTrayIcon->isVisible())
+    {
+        // QMessageBox::information(this, "Hiding Application",
+        // "The application will continue to run in the system tray. "
+        // "Click the icon to show the window again.");
+        hide();
+        m_bWindowVisible = false;
+        event->ignore(); // Ignore the close event, just hide the window
+        return;
+    }
+    else
+    {
+        // If the icon is not visible (e.g., if we decide to remove it later),
+        // we can let the application close normally.
+        m_bWindowVisible = true;
+        event->accept();
+    }
+    qDebug() << __PRETTY_FUNCTION__ << __LINE__;
+    // hotkeyMgr-> unregisterAllHotkeys();
+    // saveSettings ();
+    //event->accept();
     QWidget::closeEvent(event);
 }
 
@@ -178,18 +215,18 @@ void Widget::mousePressEvent(QMouseEvent *event)
     // qDebug() << __PRETTY_FUNCTION__;
     QRect rect = this->rect();
     QPoint pos = event->pos();
-//    if (pos.x() <= m_iResizeMargin && pos.y() <= m_iResizeMargin)
-//        setCursor(Qt::SizeFDiagCursor); // Top-left
-//    else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() <= m_iResizeMargin)
-//        setCursor(Qt::SizeBDiagCursor); // Top-right
-//    else if (pos.x() <= m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
-//        setCursor(Qt::SizeBDiagCursor); // Bottom-left
-//    else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
-//        setCursor(Qt::SizeFDiagCursor); // Bottom-right
-//    else if (pos.x() <= m_iResizeMargin)
-//        setCursor(Qt::SizeHorCursor); // Left
-//    else if (pos.x() >= rect.width() - m_iResizeMargin)
-//        setCursor(Qt::SizeHorCursor); // Right
+    // if (pos.x() <= m_iResizeMargin && pos.y() <= m_iResizeMargin)
+    // setCursor(Qt::SizeFDiagCursor); // Top-left
+    // else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() <= m_iResizeMargin)
+    // setCursor(Qt::SizeBDiagCursor); // Top-right
+    // else if (pos.x() <= m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
+    // setCursor(Qt::SizeBDiagCursor); // Bottom-left
+    // else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
+    // setCursor(Qt::SizeFDiagCursor); // Bottom-right
+    // else if (pos.x() <= m_iResizeMargin)
+    // setCursor(Qt::SizeHorCursor); // Left
+    // else if (pos.x() >= rect.width() - m_iResizeMargin)
+    // setCursor(Qt::SizeHorCursor); // Right
     /*else*/ if (pos.y() <= m_iResizeMargin)
         setCursor(Qt::SizeVerCursor); // Top
     else if (pos.y() >= rect.height() - m_iResizeMargin)
@@ -288,6 +325,86 @@ void Widget::leaveEvent(QEvent *event)
     if (m_bIsTransparent) this->setWindowOpacity (m_dOpacity);
 }
 
+void Widget::showSettings()
+{
+    // HotkeyEditor *hot=new HotkeyEditor(this);
+    // hot->exec ();
+    SettingsDialog settingsDialog;
+    connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(settingsDialogAccepted()));
+    // connect(&settingsDialog, SIGNAL(applyClicked()), this, SLOT(settingsDialogAccepted()));
+    //    // cd.setParent (this);
+    settingsDialog.setWindowTitle("Volume settings");
+    // NativeHotkeyManager *manager = NativeHotkeyManager::instance(this);
+    // manager->unregisterAllHotkeys ();
+    settingsDialog.exec();
+    // hotkeyMgr->bindAction(1, std::bind(&Widget::on_muteButton_clicked, this));
+    // hotkeyMgr->bindAction(2, std::bind(&Widget::toggleOnTop, this));
+    // hotkeyMgr->bindAction(3, std::bind(&Widget::handleVolumeUp, this));
+    // hotkeyMgr->bindAction(4, std::bind(&Widget::handleVolumeDown, this));
+    // hotkeyMgr->bindAction(5, std::bind(&Widget::toggleTransparency, this));
+    hotkeyMgr->loadHotkeys();
+    qDebug() << "Hotkey actions registered:" << hotkeyMgr->registeredHotkeyNames();
+}
+
+void Widget::createTrayIconAndMenu()
+{
+    m_TrayMenu = new QMenu(this);
+    // QAction *showAction = new QAction("Show Volume window", this);
+    // showAction->setIcon (QIcon(":/img/img/icons8-sound-48.png"));
+    // connect(showAction, SIGNAL(triggered()), this, SLOT(show()));
+    QAction *settingsAction = new QAction("Settings", this);
+    settingsAction->setIcon (QIcon(":/img/img/icons8-wrench-48.png"));
+    connect(settingsAction, SIGNAL(triggered()), this, SLOT(showSettings()));
+    QAction *quitAction = new QAction("Quit", this);
+    quitAction->setIcon (QIcon(":/img/img/icons8-quit-36.png"));
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(trayQuitApplication()));
+    // m_TrayMenu->addAction(showAction);
+    m_TrayMenu->addAction(settingsAction);
+    // m_TrayMenu->addSeparator(); // A clear visual separator
+    m_TrayMenu->addAction(quitAction);
+    // --- 2. Create the Tray Icon (QSystemTrayIcon) ---
+    m_SystemTrayIcon = new QSystemTrayIcon(this);
+    m_SystemTrayIcon->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
+    m_SystemTrayIcon->setToolTip("Volume");
+    // Link the context menu to the icon
+    m_SystemTrayIcon->setContextMenu(m_TrayMenu);
+    // --- 3. Connect the Icon Activation Signal ---
+    // Connect the activation signal (e.g., double-click or single-click)
+    connect(m_SystemTrayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
+        this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
+}
+
+void Widget::trayQuitApplication()
+{
+    QApplication::quit();
+}
+
+void Widget::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    // Pragmatic code structure: handling different click types
+    switch (reason)
+    {
+    case QSystemTrayIcon::Trigger: // Usually a single click
+    // break;
+    case QSystemTrayIcon::DoubleClick: // Usually a double click
+        // If the window is hidden, show it
+        if (!isVisible())
+        {
+            show();
+            m_bWindowVisible = true;
+        }
+        else
+        {
+            // Optional: hide on second click
+            hide();
+            m_bWindowVisible = false;
+        }
+        break;
+    default:
+        ; // Do nothing for other reasons
+    }
+}
+
 void Widget::showContextMenu(const QPoint &pos)
 {
     QMenu contextMenu(this);
@@ -296,34 +413,19 @@ void Widget::showContextMenu(const QPoint &pos)
     QAction *selectedAction = contextMenu.exec(this->mapToGlobal(pos));
     if (selectedAction == settingsAction)
     {
-        // HotkeyEditor *hot=new HotkeyEditor(this);
-        // hot->exec ();
-        SettingsDialog settingsDialog;
-        connect(&settingsDialog, SIGNAL(accepted()), this, SLOT(settingsDialogAccepted()));
-        // connect(&settingsDialog, SIGNAL(applyClicked()), this, SLOT(settingsDialogAccepted()));
-        //    // cd.setParent (this);
-        settingsDialog.setWindowTitle("Volume settings");
-        // NativeHotkeyManager *manager = NativeHotkeyManager::instance(this);
-        // manager->unregisterAllHotkeys ();
-        settingsDialog.exec();
-        // hotkeyMgr->bindAction(1, std::bind(&Widget::on_muteButton_clicked, this));
-        // hotkeyMgr->bindAction(2, std::bind(&Widget::toggleOnTop, this));
-        // hotkeyMgr->bindAction(3, std::bind(&Widget::handleVolumeUp, this));
-        // hotkeyMgr->bindAction(4, std::bind(&Widget::handleVolumeDown, this));
-        // hotkeyMgr->bindAction(5, std::bind(&Widget::toggleTransparency, this));
-        hotkeyMgr->loadHotkeys();
-        qDebug() << "Hotkey actions registered:" << hotkeyMgr->registeredHotkeyNames();
+        showSettings ();
     }
 }
 
 void Widget::settingsDialogAccepted()
 {
     qDebug() << __PRETTY_FUNCTION__;
-    QTimer::singleShot( 100, this, SLOT(setOSDSettings()) );
+    QTimer::singleShot( 100, this, SLOT(updateSettings()) );
 }
 
-void Widget::setOSDSettings()
+void Widget::updateSettings()
 {
+    qDebug() << __PRETTY_FUNCTION__;
     QSettings settings;
     m_bOSD_Enabled = settings.value ("OSD_Enabled", true).toBool ();
     m_iOSD_TextSize = settings.value ("OSD_TextSize", 16).toInt ();
@@ -332,6 +434,18 @@ void Widget::setOSDSettings()
     osd->setTextSize (m_iOSD_TextSize);
     osd->setDuration (m_iOSD_Duration);
     osd->setPosition (m_sOSDPosition);
+    m_bTrayIcon = settings.value ("TrayIcon", true).toBool ();
+    if (m_bTrayIcon)
+    {
+        m_SystemTrayIcon->show();
+        qApp->setQuitOnLastWindowClosed(false);
+    }
+    else
+    {
+        m_SystemTrayIcon->hide ();
+        qApp->setQuitOnLastWindowClosed(true);
+        if (this->window ()->isHidden ()) close ();
+    }
 }
 
 void Widget::showOpacityContextMenu(const QPoint &pos)
@@ -593,6 +707,8 @@ void Widget::saveSettings()
     else
         settings.setValue("Transparent", qreal(1.0));
     settings.setValue("LastTransparecyLevel", qreal(m_dLastOpacity));
+    settings.setValue ("WindowVisible", m_bWindowVisible);
+    settings.sync ();
     // In Qt, le impostazioni vengono salvate automaticamente
 }
 
@@ -659,6 +775,8 @@ void Widget::loadSettings()
     m_bOSD_Enabled = settings.value ("OSD_Enabled", true).toBool ();
     m_iOSD_TextSize = settings.value ("OSD_TextSize", 16).toInt ();
     m_iOSD_Duration = settings.value ("OSD_Duration", 2000).toInt ();
+    m_bTrayIcon = settings.value ("TrayIcon", true).toBool ();
+    m_bWindowVisible = settings.value ("WindowVisible", true).toBool ();
 }
 
 void Widget::updateButtons()
@@ -676,18 +794,18 @@ void Widget::updateButtons()
 void Widget::updateCursorShape(const QPoint &pos)
 {
     QRect rect = this->rect();
-//    if (pos.x() <= m_iResizeMargin && pos.y() <= m_iResizeMargin)
-//        setCursor(Qt::SizeFDiagCursor);
-//    else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() <= m_iResizeMargin)
-//        setCursor(Qt::SizeBDiagCursor);
-//    else if (pos.x() <= m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
-//        setCursor(Qt::SizeBDiagCursor);
-//    else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
-//        setCursor(Qt::SizeFDiagCursor);
-//    else if (pos.x() <= m_iResizeMargin)
-//        setCursor(Qt::SizeHorCursor);
-//    else if (pos.x() >= rect.width() - m_iResizeMargin)
-//        setCursor(Qt::SizeHorCursor);
+    // if (pos.x() <= m_iResizeMargin && pos.y() <= m_iResizeMargin)
+    // setCursor(Qt::SizeFDiagCursor);
+    // else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() <= m_iResizeMargin)
+    // setCursor(Qt::SizeBDiagCursor);
+    // else if (pos.x() <= m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
+    // setCursor(Qt::SizeBDiagCursor);
+    // else if (pos.x() >= rect.width() - m_iResizeMargin && pos.y() >= rect.height() - m_iResizeMargin)
+    // setCursor(Qt::SizeFDiagCursor);
+    // else if (pos.x() <= m_iResizeMargin)
+    // setCursor(Qt::SizeHorCursor);
+    // else if (pos.x() >= rect.width() - m_iResizeMargin)
+    // setCursor(Qt::SizeHorCursor);
     /*else*/ if (pos.y() <= m_iResizeMargin)
         setCursor(Qt::SizeVerCursor);
     else if (pos.y() >= rect.height() - m_iResizeMargin)
