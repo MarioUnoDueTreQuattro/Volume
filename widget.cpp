@@ -127,6 +127,9 @@ Widget::Widget(QWidget *parent)
     osd = new OSDWidget();
     // Optional: make the OSD click-through so it doesn't intercept mouse.
     osd->setClickThrough(true);
+    QTimer::singleShot( 100, this, SLOT(setOSDSettings()) );
+    // osd->setTextSize (m_iOSD_TextSize);
+    // osd->setDuration (m_iOSD_Duration);
     // QObject::connect(btn, SIGNAL(clicked()), osd, SLOT(hide())); // just demo slot use
     //    // Instead of lambda, create a small QObject wrapper to call showMessage or call from a slot.
     // QObject::connect(btn, SIGNAL(clicked()), &demo, SLOT(show())); // keep simple demo
@@ -312,6 +315,19 @@ void Widget::showContextMenu(const QPoint &pos)
 void Widget::settingsDialogAccepted()
 {
     qDebug() << __PRETTY_FUNCTION__;
+    QTimer::singleShot( 100, this, SLOT(setOSDSettings()) );
+}
+
+void Widget::setOSDSettings()
+{
+    QSettings settings;
+    m_bOSD_Enabled = settings.value ("OSD_Enabled", true).toBool ();
+    m_iOSD_TextSize = settings.value ("OSD_TextSize", 16).toInt ();
+    m_iOSD_Duration = settings.value ("OSD_Duration", 2000).toInt ();
+    m_sOSDPosition = settings.value ("OSD_Position", "Center").toString ();
+    osd->setTextSize (m_iOSD_TextSize);
+    osd->setDuration (m_iOSD_Duration);
+    osd->setPosition (m_sOSDPosition);
 }
 
 void Widget::showOpacityContextMenu(const QPoint &pos)
@@ -396,9 +412,17 @@ void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyNam
 {
     qDebug() << __PRETTY_FUNCTION__ << "Device name: " << friendlyName;
     QString sToolTipMessage = "Default audio playback device changed to:<br><b>" + friendlyName + "</b>";
-    QPoint globalPos = ui->volumeSlider->mapToGlobal(QPoint(ui->volumeSlider->width() / 2, ui->volumeSlider->height() / 2));
-    QToolTip::showText(globalPos, sToolTipMessage, ui->volumeSlider);
-    //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
+    if (m_bOSD_Enabled)
+    {
+        if (osd->duration () < 5000) osd->showMessage (sToolTipMessage, 5000);
+        else osd->showMessage (sToolTipMessage);
+    }
+    else
+    {
+        QPoint globalPos = ui->volumeSlider->mapToGlobal(QPoint(ui->volumeSlider->width() / 2, ui->volumeSlider->height() / 2));
+        QToolTip::showText(globalPos, sToolTipMessage, ui->volumeSlider);
+        //QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
+    }
     m_systemVolumeController->blockSignals(true);
     m_systemVolumeController->cleanup();
     m_systemVolumeController->initialize();
@@ -462,7 +486,7 @@ void Widget::handleVolumeUp()
     m_systemVolumeController->setVolume (fVol);
     ui->volumeSlider->setValue (iCurVol);
     ui->volumeLabel->setText(QString::number(iCurVol) + "%");
-    osd->showMessage ("Volume: " + QString::number(iCurVol) + "%");
+    if (m_bOSD_Enabled) osd->showMessage ("Volume: " + QString::number(iCurVol) + "%");
 }
 
 void Widget::handleVolumeDown()
@@ -474,7 +498,7 @@ void Widget::handleVolumeDown()
     m_systemVolumeController->setVolume (fVol);
     ui->volumeSlider->setValue (iCurVol);
     ui->volumeLabel->setText(QString::number(iCurVol) + "%");
-    osd->showMessage ("Volume: " + QString::number(iCurVol) + "%");
+    if (m_bOSD_Enabled) osd->showMessage ("Volume: " + QString::number(iCurVol) + "%");
 }
 
 void Widget::on_muteButton_clicked()
@@ -489,7 +513,7 @@ void Widget::on_muteButton_clicked()
         ui->volumeSlider->setValue (iVol);
         ui->volumeLabel->setText(QString::number(iVol) + "%");
         ui->muteButton->setChecked (false);
-        osd->showMessage ("Unmute");
+        if (m_bOSD_Enabled) osd->showMessage ("Unmute");
     }
     else
     {
@@ -497,7 +521,7 @@ void Widget::on_muteButton_clicked()
         m_systemVolumeController->mute (true);
         // ui->volumeLabel->setText("0%");
         ui->muteButton->setChecked (true);
-        osd->showMessage ("Mute");
+        if (m_bOSD_Enabled) osd->showMessage ("Mute");
     }
 }
 
@@ -510,14 +534,14 @@ void Widget::toggleOnTop()
         flags &= ~Qt::WindowStaysOnTopHint;
         //onTopButton->setText("↑");
         onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
-        osd->showMessage ("Always on top disabled");
+        if (m_bOSD_Enabled) osd->showMessage ("Always on top disabled");
     }
     else
     {
         flags |= Qt::WindowStaysOnTopHint;
         //onTopButton->setText("↓");
         onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
-        osd->showMessage ("Always on top enabled");
+        if (m_bOSD_Enabled) osd->showMessage ("Always on top enabled");
     }
     setWindowFlags(flags);
     show(); // Reapply flags
@@ -570,6 +594,7 @@ void Widget::saveSettings()
 
 void Widget::loadSettings()
 {
+    qDebug() << __PRETTY_FUNCTION__;
     QSettings settings;
     // 1. Carica la posizione
     QPoint savedPos = settings.value("Position", QPoint(100, 100)).toPoint();
@@ -627,6 +652,9 @@ void Widget::loadSettings()
     setWindowOpacity(opacity);
     m_dOpacity = opacity;
     updateButtons();
+    m_bOSD_Enabled = settings.value ("OSD_Enabled", true).toBool ();
+    m_iOSD_TextSize = settings.value ("OSD_TextSize", 16).toInt ();
+    m_iOSD_Duration = settings.value ("OSD_Duration", 2000).toInt ();
 }
 
 void Widget::updateButtons()

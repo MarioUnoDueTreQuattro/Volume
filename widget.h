@@ -31,6 +31,10 @@ private:
     SystemVolumeController *m_systemVolumeController;
     NativeHotkeyManager *hotkeyMgr;
     OSDWidget *osd;
+    bool m_bOSD_Enabled;
+    int m_iOSD_TextSize;
+    int m_iOSD_Duration;
+    QString m_sOSDPosition;
     bool m_bIsOnTop;
     bool m_bIsTransparent;
     qreal m_dOpacity;
@@ -41,8 +45,8 @@ private:
     int topButtonsMargin;
     int m_iButtonSize;
     void updateMuteButtonIcon();
-    void saveSettings();
     void loadSettings();
+    void saveSettings();
     QPoint mouseStartPos;
     QPoint windowStartPos;
     WindowButton *closeButton;
@@ -83,5 +87,6 @@ private slots:
     void toggleTransparency();
     void showContextMenu(const QPoint &pos);
     void settingsDialogAccepted();
+    void setOSDSettings();
 };
 #endif // WIDGET_H

@@ -17,6 +17,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     hotkeyMgr = NativeHotkeyManager::instance(this);
     hotkeyMgr->unregisterAllHotkeys ();
     loadHotKeys ();
+    loadSettings();
     adjustSize();
 }
 
@@ -25,12 +26,8 @@ SettingsDialog::~SettingsDialog()
     delete ui;
 }
 
-void SettingsDialog::on_buttonBox_accepted()
+void SettingsDialog::saveHotKeys()
 {
-    // QSettings settings;
-    // settings.beginGroup("Hotkeys");
-    //settings.remove(""); // clear previous
-    // for (auto id : hotkeys.keys())
     UINT mod = 0, vk = 0;
     QKeySequence seq = ui->keySequenceEditMute->keySequence();
     QString sequence = seq.toString(QKeySequence::NativeText);
@@ -70,7 +67,52 @@ void SettingsDialog::on_buttonBox_accepted()
     // seq = ui->keySequenceEditTransparent->keySequence();
     // sequence = seq.toString(QKeySequence::NativeText);
     // settings.setValue(QString::number(5), sequence);
-    // settings.sync ();
+    // settings.beginGroup("Hotkeys");
+    //settings.remove(""); // clear previous
+    // for (auto id : hotkeys.keys())
+}
+
+void SettingsDialog::on_buttonBox_accepted()
+{
+    QSettings settings;
+    settings.setValue ("OSD_Enabled", ui->checkBoxOSD->isChecked ());
+    settings.setValue ("OSD_TextSize", ui->spinBoxOSDTextSize->value ());
+    settings.setValue ("OSD_Duration", ui->spinBoxOSDDuration->value ());
+    if (ui->radioButtonOSDCenter->isChecked ())
+        settings.setValue ("OSD_Position", "Center");
+    else if (ui->radioButtonOSDBottomRight->isChecked ())
+        settings.setValue ("OSD_Position", "BottomRight");
+    settings.sync ();
+    saveHotKeys ();
+}
+
+void SettingsDialog::loadSettings()
+{
+    QSettings settings;
+    bool bOSD_Enabled = settings.value ("OSD_Enabled", true).toBool ();
+    int iTextSize = settings.value ("OSD_TextSize", 16).toInt ();
+    int iDuration = settings.value ("OSD_Duration", 2000).toInt ();
+    if (bOSD_Enabled)
+    {
+        ui->checkBoxOSD->setChecked(true);
+        ui->spinBoxOSDTextSize->setEnabled (true);
+        ui->spinBoxOSDDuration->setEnabled (true);
+        ui->radioButtonOSDCenter->setEnabled (true);
+        ui->radioButtonOSDBottomRight->setEnabled (true);
+    }
+    else
+    {
+        ui->checkBoxOSD->setChecked(false);
+        ui->spinBoxOSDTextSize->setEnabled (false);
+        ui->spinBoxOSDDuration->setEnabled (false);
+        ui->radioButtonOSDCenter->setEnabled (false);
+        ui->radioButtonOSDBottomRight->setEnabled (false);
+    }
+    ui->spinBoxOSDTextSize->setValue (iTextSize);
+    ui->spinBoxOSDDuration->setValue (iDuration);
+    QString sPosition = settings.value ("OSD_Position", "Center").toString ();
+    if (sPosition == "Center") ui->radioButtonOSDCenter->setChecked (true);
+    else if (sPosition == "BottomRight") ui->radioButtonOSDBottomRight->setChecked (true);
 }
 
 void SettingsDialog::loadHotKeys()
@@ -152,4 +194,22 @@ void SettingsDialog::on_pushButtonResetTransparent_clicked()
 {
     ui->keySequenceEditTransparent->clear ();
     ui->keySequenceEditTransparent->setFocus ();
+}
+
+void SettingsDialog::on_checkBoxOSD_stateChanged(int state)
+{
+    if (state == 0)
+    {
+        ui->spinBoxOSDTextSize->setEnabled (false);
+        ui->spinBoxOSDDuration->setEnabled (false);
+        ui->radioButtonOSDCenter->setEnabled (false);
+        ui->radioButtonOSDBottomRight->setEnabled (false);
+    }
+    else
+    {
+        ui->spinBoxOSDTextSize->setEnabled (true);
+        ui->spinBoxOSDDuration->setEnabled (true);
+        ui->radioButtonOSDCenter->setEnabled (true);
+        ui->radioButtonOSDBottomRight->setEnabled (true);
+    }
 }

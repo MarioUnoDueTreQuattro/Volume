@@ -24,10 +24,14 @@ private slots:
     void on_pushButtonResetMute_clicked();
     void on_pushButtonResetTop_clicked();
     void on_pushButtonResetTransparent_clicked();
+    void on_checkBoxOSD_stateChanged(int arg1);
+
 private:
     Ui::SettingsDialog *ui;
     NativeHotkeyManager *hotkeyMgr;
     void loadHotKeys();
+    void loadSettings();
+    void saveHotKeys();
 };
 
 #endif // SETTINGSDIALOG_H
