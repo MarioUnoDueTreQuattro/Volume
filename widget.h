@@ -100,5 +100,6 @@ private slots:
     void settingsDialogAccepted();
     void updateSettings();
     void showSettings();
+    void showSystemAudioDevices();
 };
 #endif // WIDGET_H

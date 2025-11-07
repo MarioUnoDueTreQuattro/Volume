@@ -14,7 +14,7 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget), m_bWindowVisible(true), m_bTrayIcon(true), m_bMoving(false), m_bMousePressed(false), m_bResizing(false), m_iResizeMargin(4), m_iTopButtonsMargin(3)
 {
     ui->setupUi(this);
-    setWindowTitle ("Volume");
+    setWindowTitle("Volume");
     //     // Remove the minimize and maximize/restore buttons, leaving only the close button.
     //    // The window will still have its title bar.
     // setWindowFlags(
@@ -45,10 +45,10 @@ Widget::Widget(QWidget *parent)
     // this, SLOT(onDefaultDeviceChanged()));
     connect(m_systemVolumeController, SIGNAL(defaultDeviceChanged(QString, QString)),
         this, SLOT(onDeviceChanged(QString, QString)));
-    int iVol = int (m_systemVolumeController->volume () * 100.01f);
+    int iVol = int (m_systemVolumeController->volume() * 100.01f);
     qDebug() << "Current master volume:" << iVol;
     QSignalBlocker blocker(ui->volumeSlider);
-    ui->volumeSlider->setValue (iVol);
+    ui->volumeSlider->setValue(iVol);
     ui->volumeLabel->setText(QString::number(iVol) + "%");
     // bool bMuted = m_systemVolumeController->isMuted ();
     // if (bMuted)
@@ -59,44 +59,44 @@ Widget::Widget(QWidget *parent)
     // {
     // ui->muteButton->setChecked (false);
     // }
-    updateMuteButtonIcon ();
+    updateMuteButtonIcon();
     m_iButtonSize = 12;
     closeButton = new WindowButton("", this);
     closeButton->setGeometry(width() - m_iButtonSize, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     closeButton->setStyleSheet("QPushButton { border: none; }");
-    closeButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
-    closeButton->setIcon (QIcon(":/img/img/Close.png"));
+    closeButton->setIconSize(QSize(m_iButtonSize, m_iButtonSize));
+    closeButton->setIcon(QIcon(":/img/img/Close.png"));
     minimizeButton = new WindowButton("", this);
     minimizeButton->setGeometry(width() - m_iButtonSize * 2, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     minimizeButton->setStyleSheet("QPushButton { border: none; }");
-    minimizeButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
-    minimizeButton->setIcon (QIcon(":/img/img/Minimize.png"));
+    minimizeButton->setIconSize(QSize(m_iButtonSize, m_iButtonSize));
+    minimizeButton->setIcon(QIcon(":/img/img/Minimize.png"));
     onTopButton = new WindowButton("", this);
     onTopButton->setGeometry(width() - m_iButtonSize * 3, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     onTopButton->setStyleSheet("QPushButton { border: none; }");
-    onTopButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
-    onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+    onTopButton->setIconSize(QSize(m_iButtonSize, m_iButtonSize));
+    onTopButton->setIcon(QIcon(":/img/img/Pin.png"));
     transparentButton = new WindowButton("", this);
     transparentButton->setGeometry(width() - m_iButtonSize * 4, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     transparentButton->setStyleSheet("QPushButton { border: none; }");
-    transparentButton->setIconSize (QSize(m_iButtonSize, m_iButtonSize));
-    transparentButton->setIcon (QIcon(":/img/img/Transparent.png"));
+    transparentButton->setIconSize(QSize(m_iButtonSize, m_iButtonSize));
+    transparentButton->setIcon(QIcon(":/img/img/Transparent.png"));
     connect(transparentButton, SIGNAL(clicked()), this, SLOT(toggleTransparency()));
     connect(onTopButton, SIGNAL(clicked()), this, SLOT(toggleOnTop()));
     connect(closeButton, SIGNAL(clicked()), this, SLOT(close()));
     connect(minimizeButton, SIGNAL(clicked()), this, SLOT(showMinimized()));
-    closeButton->setToolTip ("Close");
-    minimizeButton->setToolTip ("Minimize");
-    onTopButton->setToolTip ("On top");
-    transparentButton->setToolTip ("Transparent");
-    closeButton->setFixedSize (m_iButtonSize, m_iButtonSize);
-    minimizeButton->setFixedSize (m_iButtonSize, m_iButtonSize);
-    onTopButton->setFixedSize (m_iButtonSize, m_iButtonSize);
-    transparentButton->setFixedSize (m_iButtonSize, m_iButtonSize);
-    transparentButton->setContextMenuPolicy (Qt::CustomContextMenu);
+    closeButton->setToolTip("Close");
+    minimizeButton->setToolTip("Minimize");
+    onTopButton->setToolTip("On top");
+    transparentButton->setToolTip("Transparent");
+    closeButton->setFixedSize(m_iButtonSize, m_iButtonSize);
+    minimizeButton->setFixedSize(m_iButtonSize, m_iButtonSize);
+    onTopButton->setFixedSize(m_iButtonSize, m_iButtonSize);
+    transparentButton->setFixedSize(m_iButtonSize, m_iButtonSize);
+    transparentButton->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(transparentButton, &QPushButton::customContextMenuRequested, this, &Widget::showOpacityContextMenu);
     connect(this, &QWidget::customContextMenuRequested, this, &Widget::showContextMenu);
-    loadSettings ();
+    loadSettings();
     // adjustSize();
     //QTimer::singleShot(1000, this, SLOT(initializeHotkeyManager()));
     hotkeyMgr = NativeHotkeyManager::instance(this);
@@ -127,7 +127,7 @@ Widget::Widget(QWidget *parent)
     osd = new OSDWidget();
     // Optional: make the OSD click-through so it doesn't intercept mouse.
     osd->setClickThrough(true);
-    QTimer::singleShot( 100, this, SLOT(updateSettings()) );
+    QTimer::singleShot(100, this, SLOT(updateSettings()));
     // osd->setTextSize (m_iOSD_TextSize);
     // osd->setDuration (m_iOSD_Duration);
     // QObject::connect(btn, SIGNAL(clicked()), osd, SLOT(hide())); // just demo slot use
@@ -142,12 +142,19 @@ Widget::Widget(QWidget *parent)
     {
         m_SystemTrayIcon->show();
         qApp->setQuitOnLastWindowClosed(false);
-        if (m_bWindowVisible == false) QTimer::singleShot( 100, this, SLOT(hide()) );
+        Qt::WindowFlags flags = windowFlags();
+        flags |= Qt::Tool;
+        setWindowFlags(flags);
+        if (m_bWindowVisible == false) QTimer::singleShot(100, this, SLOT(hide()));
     }
     else
     {
-        m_SystemTrayIcon->hide ();
+        m_SystemTrayIcon->hide();
         qApp->setQuitOnLastWindowClosed(true);
+        Qt::WindowFlags flags = windowFlags();
+        flags &= ~Qt::WindowMaximizeButtonHint;
+        setWindowFlags(flags);
+        setWindowFlags(Qt::FramelessWindowHint/* | Qt::Window*/);
     }
 }
 
@@ -157,7 +164,7 @@ Widget::~Widget()
     delete osd;
     osd = nullptr;
     hotkeyMgr-> unregisterAllHotkeys();
-    saveSettings ();
+    saveSettings();
     qDebug() << "saveSettings";
     delete ui;
 }
@@ -183,6 +190,7 @@ void Widget::closeEvent(QCloseEvent *event)
         // we can let the application close normally.
         m_bWindowVisible = true;
         event->accept();
+        //qApp->quit ();
     }
     qDebug() << __PRETTY_FUNCTION__ << __LINE__;
     // hotkeyMgr-> unregisterAllHotkeys();
@@ -194,13 +202,13 @@ void Widget::closeEvent(QCloseEvent *event)
 void Widget::resizeEvent(QResizeEvent *event)
 {
     // 1. Chiami la versione base del gestore di eventi
-    QWidget::resizeEvent (event);
+    QWidget::resizeEvent(event);
     closeButton->setGeometry(width() - m_iButtonSize, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     minimizeButton->setGeometry(width() - m_iButtonSize * 2, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     onTopButton->setGeometry(width() - m_iButtonSize * 3, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     transparentButton->setGeometry(width() - m_iButtonSize * 4, m_iTopButtonsMargin, m_iButtonSize, m_iButtonSize);
     int iWidth = m_iButtonSize * 4 + 2;
-    this->resize (iWidth, this->height ());
+    this->resize(iWidth, this->height());
     // 2. Imposti il vincolo di larghezza
     // this->setFixedWidth (48);
     // 3. ✨ Forza il genitore ad aggiornare la sua dimensione preferita
@@ -260,7 +268,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
     // qDebug() << __PRETTY_FUNCTION__;
     updateCursorShape(event->pos());
     QWidget *child = childAt(mapFromGlobal(QCursor::pos()));
-    if (qobject_cast<QPushButton *>(child) )
+    if (qobject_cast<QPushButton *>(child))
     {
         setCursor(Qt::ArrowCursor);
         // return;
@@ -317,12 +325,12 @@ void Widget::paintEvent(QPaintEvent *event)
 
 void Widget::enterEvent(QEvent *event)
 {
-    if (m_bIsTransparent) this->setWindowOpacity (1.0);
+    if (m_bIsTransparent) this->setWindowOpacity(1.0);
 }
 
 void Widget::leaveEvent(QEvent *event)
 {
-    if (m_bIsTransparent) this->setWindowOpacity (m_dOpacity);
+    if (m_bIsTransparent) this->setWindowOpacity(m_dOpacity);
 }
 
 void Widget::showSettings()
@@ -346,19 +354,28 @@ void Widget::showSettings()
     qDebug() << "Hotkey actions registered:" << hotkeyMgr->registeredHotkeyNames();
 }
 
+void Widget::showSystemAudioDevices()
+{
+    ShellExecute(NULL, L"open", L"control", L"mmsys.cpl,,0", NULL, SW_SHOWNORMAL);
+}
+
 void Widget::createTrayIconAndMenu()
 {
     m_TrayMenu = new QMenu(this);
     // QAction *showAction = new QAction("Show Volume window", this);
     // showAction->setIcon (QIcon(":/img/img/icons8-sound-48.png"));
     // connect(showAction, SIGNAL(triggered()), this, SLOT(show()));
+    QAction *systemDevicesAction = new QAction("System audio devices", this);
+    systemDevicesAction->setIcon(QIcon(":/img/img/SndVol_101.png"));
+    connect(systemDevicesAction, SIGNAL(triggered()), this, SLOT(showSystemAudioDevices()));
     QAction *settingsAction = new QAction("Settings", this);
-    settingsAction->setIcon (QIcon(":/img/img/icons8-wrench-48.png"));
+    settingsAction->setIcon(QIcon(":/img/img/icons8-wrench-48.png"));
     connect(settingsAction, SIGNAL(triggered()), this, SLOT(showSettings()));
     QAction *quitAction = new QAction("Quit", this);
-    quitAction->setIcon (QIcon(":/img/img/icons8-quit-36.png"));
+    quitAction->setIcon(QIcon(":/img/img/icons8-quit-36.png"));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(trayQuitApplication()));
     // m_TrayMenu->addAction(showAction);
+    m_TrayMenu->addAction(systemDevicesAction);
     m_TrayMenu->addAction(settingsAction);
     // m_TrayMenu->addSeparator(); // A clear visual separator
     m_TrayMenu->addAction(quitAction);
@@ -384,24 +401,24 @@ void Widget::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
     // Pragmatic code structure: handling different click types
     switch (reason)
     {
-    case QSystemTrayIcon::Trigger: // Usually a single click
-    // break;
-    case QSystemTrayIcon::DoubleClick: // Usually a double click
-        // If the window is hidden, show it
-        if (!isVisible())
-        {
-            show();
-            m_bWindowVisible = true;
-        }
-        else
-        {
-            // Optional: hide on second click
-            hide();
-            m_bWindowVisible = false;
-        }
-        break;
-    default:
-        ; // Do nothing for other reasons
+        case QSystemTrayIcon::Trigger: // Usually a single click
+        // break;
+        case QSystemTrayIcon::DoubleClick: // Usually a double click
+            // If the window is hidden, show it
+            if (!isVisible())
+            {
+                show();
+                m_bWindowVisible = true;
+            }
+            else
+            {
+                // Optional: hide on second click
+                hide();
+                m_bWindowVisible = false;
+            }
+            break;
+        default:
+            ; // Do nothing for other reasons
     }
 }
 
@@ -409,42 +426,70 @@ void Widget::showContextMenu(const QPoint &pos)
 {
     QMenu contextMenu(this);
     QAction *settingsAction = contextMenu.addAction(tr("Settings"));
-    settingsAction->setIcon (QIcon(":/img/img/icons8-wrench-48.png"));
+    settingsAction->setIcon(QIcon(":/img/img/icons8-wrench-48.png"));
     QAction *selectedAction = contextMenu.exec(this->mapToGlobal(pos));
     if (selectedAction == settingsAction)
     {
-        showSettings ();
+        showSettings();
     }
 }
 
 void Widget::settingsDialogAccepted()
 {
     qDebug() << __PRETTY_FUNCTION__;
-    QTimer::singleShot( 100, this, SLOT(updateSettings()) );
+    QTimer::singleShot(100, this, SLOT(updateSettings()));
 }
 
 void Widget::updateSettings()
 {
     qDebug() << __PRETTY_FUNCTION__;
     QSettings settings;
-    m_bOSD_Enabled = settings.value ("OSD_Enabled", true).toBool ();
-    m_iOSD_TextSize = settings.value ("OSD_TextSize", 16).toInt ();
-    m_iOSD_Duration = settings.value ("OSD_Duration", 2000).toInt ();
-    m_sOSDPosition = settings.value ("OSD_Position", "Center").toString ();
-    osd->setTextSize (m_iOSD_TextSize);
-    osd->setDuration (m_iOSD_Duration);
-    osd->setPosition (m_sOSDPosition);
-    m_bTrayIcon = settings.value ("TrayIcon", true).toBool ();
+    m_bOSD_Enabled = settings.value("OSD_Enabled", true).toBool();
+    m_iOSD_TextSize = settings.value("OSD_TextSize", 16).toInt();
+    m_iOSD_Duration = settings.value("OSD_Duration", 2000).toInt();
+    m_sOSDPosition = settings.value("OSD_Position", "Center").toString();
+    osd->setTextSize(m_iOSD_TextSize);
+    osd->setDuration(m_iOSD_Duration);
+    osd->setPosition(m_sOSDPosition);
+    m_bTrayIcon = settings.value("TrayIcon", true).toBool();
+    // if (m_bTrayIcon)
+    // {
+    // m_SystemTrayIcon->show();
+    // qApp->setQuitOnLastWindowClosed(false);
+    // }
+    // else
+    // {
+    // m_SystemTrayIcon->hide ();
+    // qApp->setQuitOnLastWindowClosed(true);
+    // if (this->window ()->isHidden ()) close ();
+    // }
     if (m_bTrayIcon)
     {
+        // qApp->setQuitOnLastWindowClosed(false);
+        // bool bIsVisible = isVisible ();
         m_SystemTrayIcon->show();
         qApp->setQuitOnLastWindowClosed(false);
+        // Qt::WindowFlags flags = windowFlags();
+        // flags |= Qt::Tool;
+        // setWindowFlags (flags);
+        //this->show ();
+        // m_bWindowVisible = true;
+        // if (m_bWindowVisible == false) QTimer::singleShot( 100, this, SLOT(hide()) );
     }
     else
     {
-        m_SystemTrayIcon->hide ();
+        // bool bIsVisible = isVisible ();
+        this->show();
+        m_SystemTrayIcon->hide();
         qApp->setQuitOnLastWindowClosed(true);
-        if (this->window ()->isHidden ()) close ();
+        // Qt::WindowFlags flags = windowFlags();
+        // flags &= ~Qt::WindowMaximizeButtonHint;
+        // setWindowFlags(flags);
+        // setWindowFlags(Qt::FramelessWindowHint/* | Qt::Window*/);
+        // if (bIsVisible)
+        // {
+        // }
+        m_bWindowVisible = true;
     }
 }
 
@@ -454,7 +499,7 @@ void Widget::showOpacityContextMenu(const QPoint &pos)
     QAction *removeTransparencyAction = contextMenu.addAction(tr("Remove transparency"));
     //removeTransparencyAction->setCheckable(true);
     //playerVolumeAction->setCheckable(true);
-    if (m_bIsTransparent == false) removeTransparencyAction->setEnabled (false);
+    if (m_bIsTransparent == false) removeTransparencyAction->setEnabled(false);
     contextMenu.addSeparator();
     // --- Create a submenu for opacity levels ---
     //QMenu *opacityMenu = contextMenu.addMenu(tr("Set Opacity"));
@@ -474,12 +519,12 @@ void Widget::showOpacityContextMenu(const QPoint &pos)
     QAction *selectedAction = contextMenu.exec(transparentButton->mapToGlobal(pos));
     if (selectedAction == removeTransparencyAction)
     {
-        this->setWindowOpacity (1.0);
+        this->setWindowOpacity(1.0);
         m_bIsTransparent = false;
         m_dOpacity = 1.0;
         QString sTransparentButtonTip = "Set transparency to ";
-        sTransparentButtonTip.append (QString::number (qRound(100 - m_dLastOpacity * 100)) + "%");
-        transparentButton->setToolTip (sTransparentButtonTip);
+        sTransparentButtonTip.append(QString::number(qRound(100 - m_dLastOpacity * 100)) + "%");
+        transparentButton->setToolTip(sTransparentButtonTip);
     }
 }
 
@@ -495,7 +540,7 @@ void Widget::onOpacityActionTriggered()
     m_bIsTransparent = (opacity < 1.0);
     m_dOpacity = opacity;
     m_dLastOpacity = opacity;
-    transparentButton->setToolTip ("Remove transparency");
+    transparentButton->setToolTip("Remove transparency");
     qDebug() << "Window transparency set to" << 100 - level << "%";
     //saveSettings ();
 }
@@ -512,17 +557,17 @@ void Widget::moveEvent(QMoveEvent *event)
 void Widget::onSystemVolumeChanged(float newVolume)
 {
     qDebug() << "System volume changed: " << newVolume;
-    int iVol = int (m_systemVolumeController->volume () * 100.01f);
+    int iVol = int (m_systemVolumeController->volume() * 100.01f);
     qDebug() << "Current master volume:" << iVol;
     QSignalBlocker blocker(ui->volumeSlider);
-    ui->volumeSlider->setValue (iVol);
+    ui->volumeSlider->setValue(iVol);
     ui->volumeLabel->setText(QString::number(iVol) + "%");
 }
 
 void Widget::onSystemMuteChanged(bool muted)
 {
     qDebug() << "System mute state changed: " << muted;
-    updateMuteButtonIcon ();
+    updateMuteButtonIcon();
     // if (muted) ui->volumeLabel->setText("0%");
 }
 
@@ -532,8 +577,8 @@ void Widget::onDeviceChanged(const QString &deviceId, const QString &friendlyNam
     QString sToolTipMessage = "Default audio playback device changed to:<br><b>" + friendlyName + "</b>";
     if (m_bOSD_Enabled)
     {
-        if (osd->duration () < 5000) osd->showMessage (sToolTipMessage, 5000);
-        else osd->showMessage (sToolTipMessage);
+        if (osd->duration() < 5000) osd->showMessage(sToolTipMessage, 5000);
+        else osd->showMessage(sToolTipMessage);
     }
     else
     {
@@ -566,20 +611,20 @@ void Widget::onDefaultDeviceChanged()
     //handleVolumeChanged(int(m_systemVolumeController->volume() * 100.0f));
     // Refresh slider & label with new device volume
     onSystemVolumeChanged(m_systemVolumeController->volume());
-    QMessageBox::warning (this, "Audio device changed", "Default audio playback device changed.");
+    QMessageBox::warning(this, "Audio device changed", "Default audio playback device changed.");
 }
 
 void Widget::updateMuteButtonIcon()
 {
-    bool bMuted = m_systemVolumeController->isMuted ();
+    bool bMuted = m_systemVolumeController->isMuted();
     if (bMuted)
     {
-        ui->muteButton->setChecked (true);
+        ui->muteButton->setChecked(true);
         ui->muteButton->setIcon(QIcon(":/img/img/icons8-mute-48.png"));
     }
     else
     {
-        ui->muteButton->setChecked (false);
+        ui->muteButton->setChecked(false);
         ui->muteButton->setIcon(QIcon(":/img/img/icons8-sound-48.png"));
     }
 }
@@ -590,56 +635,56 @@ void Widget::on_volumeSlider_valueChanged(int value)
     int iVol = int (fVol * 100.01f);
     // qDebug() << "Current master volume f:" << fVol;
     // qDebug() << "Current master volume i:" << iVol;
-    m_systemVolumeController->setVolume (fVol);
-    ui->volumeSlider->setValue (iVol);
+    m_systemVolumeController->setVolume(fVol);
+    ui->volumeSlider->setValue(iVol);
     ui->volumeLabel->setText(QString::number(iVol) + "%");
 }
 
 void Widget::handleVolumeUp()
 {
     int iDiff = 10;
-    int iCurVol = ui->volumeSlider->value ();
+    int iCurVol = ui->volumeSlider->value();
     iCurVol = qBound(0, iCurVol + iDiff, 100);
     float fVol = float (float(iCurVol) / 100.0f);
-    m_systemVolumeController->setVolume (fVol);
-    ui->volumeSlider->setValue (iCurVol);
+    m_systemVolumeController->setVolume(fVol);
+    ui->volumeSlider->setValue(iCurVol);
     ui->volumeLabel->setText(QString::number(iCurVol) + "%");
-    if (m_bOSD_Enabled) osd->showMessage ("Volume: " + QString::number(iCurVol) + "%");
+    if (m_bOSD_Enabled) osd->showMessage("Volume: " + QString::number(iCurVol) + "%");
 }
 
 void Widget::handleVolumeDown()
 {
     int iDiff = -10;
-    int iCurVol = ui->volumeSlider->value ();
+    int iCurVol = ui->volumeSlider->value();
     iCurVol = qBound(0, iCurVol + iDiff, 100);
     float fVol = float (float(iCurVol) / 100.0f);
-    m_systemVolumeController->setVolume (fVol);
-    ui->volumeSlider->setValue (iCurVol);
+    m_systemVolumeController->setVolume(fVol);
+    ui->volumeSlider->setValue(iCurVol);
     ui->volumeLabel->setText(QString::number(iCurVol) + "%");
-    if (m_bOSD_Enabled) osd->showMessage ("Volume: " + QString::number(iCurVol) + "%");
+    if (m_bOSD_Enabled) osd->showMessage("Volume: " + QString::number(iCurVol) + "%");
 }
 
 void Widget::on_muteButton_clicked()
 {
-    bool bMuted = m_systemVolumeController->isMuted ();
+    bool bMuted = m_systemVolumeController->isMuted();
     if (bMuted)
     {
         // Unmute
-        m_systemVolumeController->mute (false);
-        int iVol = int (m_systemVolumeController->volume () * 100.01f);
+        m_systemVolumeController->mute(false);
+        int iVol = int (m_systemVolumeController->volume() * 100.01f);
         qDebug() << "Current master volume:" << iVol;
-        ui->volumeSlider->setValue (iVol);
+        ui->volumeSlider->setValue(iVol);
         ui->volumeLabel->setText(QString::number(iVol) + "%");
-        ui->muteButton->setChecked (false);
-        if (m_bOSD_Enabled) osd->showMessage ("Unmute");
+        ui->muteButton->setChecked(false);
+        if (m_bOSD_Enabled) osd->showMessage("Unmute");
     }
     else
     {
         // Mute
-        m_systemVolumeController->mute (true);
+        m_systemVolumeController->mute(true);
         // ui->volumeLabel->setText("0%");
-        ui->muteButton->setChecked (true);
-        if (m_bOSD_Enabled) osd->showMessage ("Mute");
+        ui->muteButton->setChecked(true);
+        if (m_bOSD_Enabled) osd->showMessage("Mute");
     }
 }
 
@@ -651,18 +696,19 @@ void Widget::toggleOnTop()
     {
         flags &= ~Qt::WindowStaysOnTopHint;
         //onTopButton->setText("↑");
-        onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
-        if (m_bOSD_Enabled) osd->showMessage ("Always on top disabled");
+        onTopButton->setIcon(QIcon(":/img/img/Pin.png"));
+        if (m_bOSD_Enabled) osd->showMessage("Always on top disabled");
     }
     else
     {
         flags |= Qt::WindowStaysOnTopHint;
         //onTopButton->setText("↓");
-        onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
-        if (m_bOSD_Enabled) osd->showMessage ("Always on top enabled");
+        onTopButton->setIcon(QIcon(":/img/img/UnPin.png"));
+        if (m_bOSD_Enabled) osd->showMessage("Always on top enabled");
     }
     setWindowFlags(flags);
-    show(); // Reapply flags
+    show();
+    m_bWindowVisible = true;
 }
 
 void Widget::toggleTransparency()
@@ -674,8 +720,8 @@ void Widget::toggleTransparency()
         m_bIsTransparent = false;
         m_dOpacity = 1.0;
         QString sTransparentButtonTip = "Set transparency to ";
-        sTransparentButtonTip.append (QString::number (qRound(100 - m_dLastOpacity * 100)) + "%");
-        transparentButton->setToolTip (sTransparentButtonTip);
+        sTransparentButtonTip.append(QString::number(qRound(100 - m_dLastOpacity * 100)) + "%");
+        transparentButton->setToolTip(sTransparentButtonTip);
     }
     else
     {
@@ -683,9 +729,11 @@ void Widget::toggleTransparency()
         // transparentButton->setText("□");
         m_bIsTransparent = true;
         m_dOpacity = m_dLastOpacity;
-        transparentButton->setToolTip ("Remove transparency");
+        transparentButton->setToolTip("Remove transparency");
         qDebug() << "Window transparency set to" << qRound((1.0 - m_dLastOpacity) * 100.0) << "%";
     }
+    show();
+    m_bWindowVisible = true;
 }
 
 void Widget::saveSettings()
@@ -707,8 +755,9 @@ void Widget::saveSettings()
     else
         settings.setValue("Transparent", qreal(1.0));
     settings.setValue("LastTransparecyLevel", qreal(m_dLastOpacity));
-    settings.setValue ("WindowVisible", m_bWindowVisible);
-    settings.sync ();
+    settings.setValue("WindowVisible", m_bWindowVisible);
+    settings.setValue("WindowTransparent", m_bIsTransparent);
+    settings.sync();
     // In Qt, le impostazioni vengono salvate automaticamente
 }
 
@@ -737,56 +786,66 @@ void Widget::loadSettings()
         move(QPoint(100, 100));
     }
     bool onTop = settings.value("OnTop", false).toBool();
+    m_bIsTransparent = settings.value("WindowTransparent").toBool();
     qreal opacity = settings.value("Transparent", 1.0).toReal();
     m_dLastOpacity = settings.value("LastTransparecyLevel", 0.5).toReal();
+    m_dOpacity = opacity;
     Qt::WindowFlags flags = windowFlags();
     if (onTop)
     {
         flags |= Qt::WindowStaysOnTopHint;
         //onTopButton->setText ("↑");
         m_bIsOnTop = true;
-        onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+        onTopButton->setIcon(QIcon(":/img/img/Pin.png"));
     }
     else
     {
         flags &= ~Qt::WindowStaysOnTopHint;
         //onTopButton->setText ("↓");
         m_bIsOnTop = false;
-        onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
+        onTopButton->setIcon(QIcon(":/img/img/UnPin.png"));
     }
     setWindowFlags(flags);
-    if (opacity < 1.0)
+    if (m_bIsTransparent)
     {
-        // transparentButton->setText("T");
-        m_bIsTransparent = true;
-        transparentButton->setToolTip ("Remove transparency");
+        if (opacity < 1.0)
+        {
+            // transparentButton->setText("T");
+            m_bIsTransparent = true;
+            transparentButton->setToolTip("Remove transparency");
+        }
+        else
+        {
+            // transparentButton->setText("t");
+            m_bIsTransparent = false;
+            QString sTransparentButtonTip = "Set transparency to ";
+            sTransparentButtonTip.append(QString::number(qRound(100 - m_dLastOpacity * 100)) + "%");
+            transparentButton->setToolTip(sTransparentButtonTip);
+        }
+        setWindowOpacity(opacity);
     }
     else
     {
-        // transparentButton->setText("t");
-        m_bIsTransparent = false;
         QString sTransparentButtonTip = "Set transparency to ";
-        sTransparentButtonTip.append (QString::number (qRound(100 - m_dLastOpacity * 100)) + "%");
-        transparentButton->setToolTip (sTransparentButtonTip);
+        sTransparentButtonTip.append(QString::number(qRound(100 - m_dLastOpacity * 100)) + "%");
+        transparentButton->setToolTip(sTransparentButtonTip);
     }
-    setWindowOpacity(opacity);
-    m_dOpacity = opacity;
     updateButtons();
-    m_bOSD_Enabled = settings.value ("OSD_Enabled", true).toBool ();
-    m_iOSD_TextSize = settings.value ("OSD_TextSize", 16).toInt ();
-    m_iOSD_Duration = settings.value ("OSD_Duration", 2000).toInt ();
-    m_bTrayIcon = settings.value ("TrayIcon", true).toBool ();
-    m_bWindowVisible = settings.value ("WindowVisible", true).toBool ();
+    m_bOSD_Enabled = settings.value("OSD_Enabled", true).toBool();
+    m_iOSD_TextSize = settings.value("OSD_TextSize", 16).toInt();
+    m_iOSD_Duration = settings.value("OSD_Duration", 2000).toInt();
+    m_bTrayIcon = settings.value("TrayIcon", true).toBool();
+    m_bWindowVisible = settings.value("WindowVisible", true).toBool();
 }
 
 void Widget::updateButtons()
 {
     if (m_bIsOnTop)
         // onTopButton->setText("↓");
-        onTopButton->setIcon (QIcon(":/img/img/UnPin.png"));
+        onTopButton->setIcon(QIcon(":/img/img/UnPin.png"));
     else
         // onTopButton->setText("↑");
-        onTopButton->setIcon (QIcon(":/img/img/Pin.png"));
+        onTopButton->setIcon(QIcon(":/img/img/Pin.png"));
     // if (m_bIsTransparent) transparentButton->setText ("T");
     // else transparentButton->setText("t");
 }
