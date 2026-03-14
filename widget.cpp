@@ -156,6 +156,7 @@ Widget::Widget(QWidget *parent)
         setWindowFlags(flags);
         setWindowFlags(Qt::FramelessWindowHint/* | Qt::Window*/);
     }
+    QTimer::singleShot(200, this, &Widget::onWindowReady);
 }
 
 Widget::~Widget()
@@ -337,7 +338,7 @@ void Widget::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event); // Chiama sempre l'implementazione base
     // Esegue onWindowReady solo una volta, appena l'applicazione è "idle"
-    QTimer::singleShot(200, this, &Widget::onWindowReady);
+    //QTimer::singleShot(200, this, &Widget::onWindowReady);
 }
 
 void Widget::onWindowReady()
