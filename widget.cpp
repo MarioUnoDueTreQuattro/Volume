@@ -127,7 +127,7 @@ Widget::Widget(QWidget *parent)
     osd = new OSDWidget();
     // Optional: make the OSD click-through so it doesn't intercept mouse.
     osd->setClickThrough(true);
-    QTimer::singleShot(100, this, SLOT(updateSettings()));
+    //QTimer::singleShot(100, this, SLOT(updateSettings()));
     // osd->setTextSize (m_iOSD_TextSize);
     // osd->setDuration (m_iOSD_Duration);
     // QObject::connect(btn, SIGNAL(clicked()), osd, SLOT(hide())); // just demo slot use
