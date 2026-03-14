@@ -333,6 +333,20 @@ void Widget::leaveEvent(QEvent *event)
     if (m_bIsTransparent) this->setWindowOpacity(m_dOpacity);
 }
 
+void Widget::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event); // Chiama sempre l'implementazione base
+    // Esegue onWindowReady solo una volta, appena l'applicazione è "idle"
+    QTimer::singleShot(200, this, &Widget::onWindowReady);
+}
+
+void Widget::onWindowReady()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    // qDebug() << "L'applicazione è completamente avviata e pronta!";
+    updateSettings();
+}
+
 void Widget::showSettings()
 {
     // HotkeyEditor *hot=new HotkeyEditor(this);
@@ -420,6 +434,24 @@ void Widget::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
         default:
             ; // Do nothing for other reasons
     }
+    QSettings settings;
+    bool onTop = settings.value("OnTop", false).toBool();
+    Qt::WindowFlags flags = windowFlags();
+    if (onTop)
+    {
+        flags |= Qt::WindowStaysOnTopHint;
+        //onTopButton->setText ("↑");
+        m_bIsOnTop = true;
+        onTopButton->setIcon(QIcon(":/img/img/Pin.png"));
+    }
+    else
+    {
+        flags &= ~Qt::WindowStaysOnTopHint;
+        //onTopButton->setText ("↓");
+        m_bIsOnTop = false;
+        onTopButton->setIcon(QIcon(":/img/img/UnPin.png"));
+    }
+    setWindowFlags(flags);
 }
 
 void Widget::showContextMenu(const QPoint &pos)
@@ -491,6 +523,57 @@ void Widget::updateSettings()
         // }
         m_bWindowVisible = true;
     }
+    bool onTop = settings.value("OnTop", false).toBool();
+    m_bIsTransparent = settings.value("WindowTransparent").toBool();
+    qreal opacity = settings.value("Transparent", 1.0).toReal();
+    m_dLastOpacity = settings.value("LastTransparecyLevel", 0.5).toReal();
+    m_dOpacity = opacity;
+    Qt::WindowFlags flags = windowFlags();
+    if (onTop)
+    {
+        flags |= Qt::WindowStaysOnTopHint;
+        //onTopButton->setText ("↑");
+        m_bIsOnTop = true;
+        onTopButton->setIcon(QIcon(":/img/img/Pin.png"));
+    }
+    else
+    {
+        flags &= ~Qt::WindowStaysOnTopHint;
+        //onTopButton->setText ("↓");
+        m_bIsOnTop = false;
+        onTopButton->setIcon(QIcon(":/img/img/UnPin.png"));
+    }
+    setWindowFlags(flags);
+    if (m_bIsTransparent)
+    {
+        if (opacity < 1.0)
+        {
+            // transparentButton->setText("T");
+            m_bIsTransparent = true;
+            transparentButton->setToolTip("Remove transparency");
+        }
+        else
+        {
+            // transparentButton->setText("t");
+            m_bIsTransparent = false;
+            QString sTransparentButtonTip = "Set transparency to ";
+            sTransparentButtonTip.append(QString::number(qRound(100 - m_dLastOpacity * 100)) + "%");
+            transparentButton->setToolTip(sTransparentButtonTip);
+        }
+        setWindowOpacity(opacity);
+    }
+    else
+    {
+        QString sTransparentButtonTip = "Set transparency to ";
+        sTransparentButtonTip.append(QString::number(qRound(100 - m_dLastOpacity * 100)) + "%");
+        transparentButton->setToolTip(sTransparentButtonTip);
+    }
+    updateButtons();
+    m_bOSD_Enabled = settings.value("OSD_Enabled", true).toBool();
+    m_iOSD_TextSize = settings.value("OSD_TextSize", 16).toInt();
+    m_iOSD_Duration = settings.value("OSD_Duration", 2000).toInt();
+    m_bTrayIcon = settings.value("TrayIcon", true).toBool();
+    m_bWindowVisible = settings.value("WindowVisible", true).toBool();
 }
 
 void Widget::showOpacityContextMenu(const QPoint &pos)

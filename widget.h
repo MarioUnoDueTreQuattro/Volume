@@ -80,6 +80,7 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     void enterEvent(QEvent *event) override;
     void leaveEvent(QEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 private slots:
     // Slot connected to the 'Quit' action in the tray menu
     void trayQuitApplication();
@@ -101,5 +102,6 @@ private slots:
     void updateSettings();
     void showSettings();
     void showSystemAudioDevices();
-};
+    void onWindowReady();
+    };
 #endif // WIDGET_H
